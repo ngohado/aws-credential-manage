@@ -1,0 +1,149 @@
+{
+  "profile_mappings": {
+    "resola-deca-chatbot-dev": {
+      "onepassword_title": "AWS Deca Chatbot Dev",
+      "description": "Deca Chatbot Development Environment"
+    },
+    "resola-deca-chatbot-prod": {
+      "onepassword_title": "AWS Deca Chatbot Prod",
+      "description": "Deca Chatbot Production Environment"
+    },
+    "resola-deca-crm-dev": {
+      "onepassword_title": "AWS Deca CRM Dev",
+      "description": "Deca CRM Development Environment"
+    },
+    "resola-deca-crm-prod": {
+      "onepassword_title": "AWS Deca CRM Prod",
+      "description": "Deca CRM Production Environment"
+    },
+    "resola-deca-data-dev": {
+      "onepassword_title": "AWS Deca Data Dev",
+      "description": "Deca Data Development Environment"
+    },
+    "resola-deca-data-prod": {
+      "onepassword_title": "AWS Deca Data Prod",
+      "description": "Deca Data Production Environment"
+    },
+    "resola-deca-forms-dev": {
+      "onepassword_title": "AWS Deca Forms Dev",
+      "description": "Deca Forms Development Environment"
+    },
+    "resola-deca-forms-prod": {
+      "onepassword_title": "AWS Deca Forms Prod",
+      "description": "Deca Forms Production Environment"
+    },
+    "resola-deca-assistant-dev": {
+      "onepassword_title": "AWS Deca Assistant Dev",
+      "description": "Deca Assistant Development Environment"
+    },
+    "resola-deca-assistant-prod": {
+      "onepassword_title": "AWS Deca Assistant Prod",
+      "description": "Deca Assistant Production Environment"
+    },
+    "resola-deca-meet-dev": {
+      "onepassword_title": "AWS Deca Meet Dev",
+      "description": "Deca Meet Development Environment"
+    },
+    "resola-deca-meet-prod": {
+      "onepassword_title": "AWS Deca Meet Prod",
+      "description": "Deca Meet Production Environment"
+    },
+    "resola-deca-livechat-dev": {
+      "onepassword_title": "AWS Deca Livechat Dev",
+      "description": "Deca Livechat Development Environment"
+    },
+    "resola-deca-livechat-prod": {
+      "onepassword_title": "AWS Deca Livechat Prod",
+      "description": "Deca Livechat Production Environment"
+    },
+    "resola-deca-kb-dev": {
+      "onepassword_title": "AWS Deca KB Dev",
+      "description": "Deca Knowledge Base Development Environment"
+    },
+    "resola-deca-kb-prod": {
+      "onepassword_title": "AWS Deca KB Prod",
+      "description": "Deca Knowledge Base Production Environment"
+    },
+    "resola-deca-tables-dev": {
+      "onepassword_title": "AWS Deca Tables Dev",
+      "description": "Deca Tables Development Environment"
+    },
+    "resola-deca-tables-prod": {
+      "onepassword_title": "AWS Deca Tables Prod",
+      "description": "Deca Tables Production Environment"
+    },
+    "resola-deca-custom-dev": {
+      "onepassword_title": "AWS Deca Custom Dev",
+      "description": "Deca Custom Development Environment"
+    },
+    "resola-deca-custom-prod": {
+      "onepassword_title": "AWS Deca Custom Prod",
+      "description": "Deca Custom Production Environment"
+    },
+    "resola-deca-pages-dev": {
+      "onepassword_title": "AWS Deca Pages Dev",
+      "description": "Deca Pages Development Environment"
+    },
+    "resola-deca-pages-prod": {
+      "onepassword_title": "AWS Deca Pages Prod",
+      "description": "Deca Pages Production Environment"
+    },
+    "resola-deca-studio-dev": {
+      "onepassword_title": "AWS Deca Studio Dev",
+      "description": "Deca Studio Development Environment"
+    },
+    "resola-deca-studio-prod": {
+      "onepassword_title": "AWS Deca Studio Prod",
+      "description": "Deca Studio Production Environment"
+    },
+    "resola-deca-shared-dev": {
+      "onepassword_title": "AWS Deca Shared Dev",
+      "description": "Deca Shared Development Environment"
+    },
+    "resola-deca-shared-prod": {
+      "onepassword_title": "AWS Deca Shared Prod",
+      "description": "Deca Shared Production Environment"
+    },
+    "resola-vs-dev": {
+      "onepassword_title": "Amazon VS Dev",
+      "description": "Virtual Store Development Environment"
+    },
+    "resola-vs-prod": {
+      "onepassword_title": "AWS Virtualstore Prod",
+      "description": "Virtual Store Production Environment"
+    },
+    "resola-rebot-dev": {
+      "onepassword_title": "AWS Rebot Dev",
+      "description": "Rebot Development Environment"
+    },
+    "resola-rebot-staging": {
+      "onepassword_title": "AWS Rebot Staging",
+      "description": "Rebot Staging Environment"
+    },
+    "resola-rebot-prod": {
+      "onepassword_title": "AWS Rebot Production",
+      "description": "Rebot Production Environment"
+    },
+    "resola-mp-prod": {
+      "onepassword_title": "Amazon MP Prod",
+      "description": "MP Production Environment"
+    },
+    "resola-ai-lab-dev": {
+      "onepassword_title": "AWS Resola AI Lab Dev",
+      "description": "AI Lab Development Environment"
+    },
+    "resola-teijin-dev": {
+      "onepassword_title": "AWS Teijin",
+      "description": "Teijin Environment"
+    },
+    "resola-teijin-prod": {
+      "onepassword_title": "AWS Teijin",
+      "description": "Teijin Environment"
+    }
+  },
+  "notes": {
+    "usage": "This file maps AWS credential profile names to their corresponding 1Password item titles",
+    "format": "profile_name -> {onepassword_title, description}",
+    "last_updated": "2026-03-02"
+  }
+}

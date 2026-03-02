@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(/Users/khainguyen/.aws/**)",
+      "Bash(op --version)",
+      "Bash(python3 aws_credential_updater.py --dry-run update resola-deca-chatbot-dev)",
+      "Bash(aws iam get-login-profile --profile resola-deca-chatbot-dev --user-name n.khai --output json)",
+      "Bash(python3 aws_tui.py)",
+      "Bash(python3 aws_credential_updater.py --help)",
+      "Bash(python3 aws_credential_updater.py list-outdated-access-keys --help)",
+      "Bash(python3 aws_credential_updater.py --dry-run update-outdated-access-keys --max-age 50)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

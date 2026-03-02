@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Environment
+.env
+.venv
+env/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Backups
+*.backup.*
+
+# Sensitive data (keep these local)
+quarterly_updates.log
+profile_mapping_local.json
+
+# 1Password session data
+.op/
+
+# AWS credentials (never commit these!)
+.aws/
+credentials*
