@@ -31,6 +31,7 @@ logs/
 # Sensitive data (keep these local)
 quarterly_updates.log
 profile_mapping_local.json
+profile_mapping.json
 
 # 1Password session data
 .op/

@@ -8,7 +8,12 @@
       "Bash(python3 aws_tui.py)",
       "Bash(python3 aws_credential_updater.py --help)",
       "Bash(python3 aws_credential_updater.py list-outdated-access-keys --help)",
-      "Bash(python3 aws_credential_updater.py --dry-run update-outdated-access-keys --max-age 50)"
+      "Bash(python3 aws_credential_updater.py --dry-run update-outdated-access-keys --max-age 50)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nInitial commit: AWS Credential Manager with Quarterly Automation\n\nFeatures:\n- AWS console password management with 1Password integration\n- Access key refresh with safe rotation and backup mechanisms\n- Quarterly automation using macOS Launch Agents\n- Comprehensive logging and email notifications\n- Outdated credential detection and bulk updates\n- Dry-run support and extensive error handling\n\nComponents:\n- aws_credential_updater.py: Main credential management tool\n- profile_mapping.json: AWS profile to 1Password item mappings\n- aws_quarterly_update.sh: Automation wrapper script\n- setup_quarterly_automation.sh: One-command setup script\n- com.resola.aws-credential-updater.plist: macOS Launch Agent\n- CLAUDE.md: Comprehensive usage documentation\n- README.md: Project overview and quick start guide\n\n🤖 Generated with [Claude Code](https://claude.ai/code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git remote add origin git@github.com:nguyenquangkhai/aws-credential-manage.git)",
+      "Bash(git branch -M main)",
+      "Bash(git push -u origin main)",
+      "Bash(git add .)"
     ],
     "deny": [],
     "ask": []

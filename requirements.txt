@@ -1,0 +1,7 @@
+# Core dependencies - none! This tool uses only Python standard library
+# External dependencies are managed by the system:
+# - AWS CLI (aws) - Install via: brew install awscli
+# - 1Password CLI (op) - Install via: brew install --cask 1password/tap/1password-cli
+
+# For modern development workflow:
+# uv sync --dev

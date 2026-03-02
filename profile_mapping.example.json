@@ -1,0 +1,30 @@
+{
+  "profile_mappings": {
+    "company-service-dev": {
+      "onepassword_title": "AWS Company Service Dev",
+      "description": "Development environment for Company Service"
+    },
+    "company-service-prod": {
+      "onepassword_title": "AWS Company Service Prod", 
+      "description": "Production environment for Company Service"
+    },
+    "personal-project": {
+      "onepassword_title": "AWS Personal Project",
+      "description": "Personal AWS account for side projects"
+    },
+    "client-name-staging": {
+      "onepassword_title": "AWS Client Name Staging",
+      "description": "Staging environment for Client Name"
+    }
+  },
+  "notes": {
+    "usage": "This file maps AWS credential profile names to their corresponding 1Password item titles",
+    "format": "profile_name -> {onepassword_title, description}",
+    "setup": [
+      "1. Copy this file to 'profile_mapping.json'",
+      "2. Replace example entries with your actual AWS profiles",
+      "3. Ensure 1Password item titles match exactly",
+      "4. Run 'python3 aws_credential_updater.py generate-mapping' to auto-detect profiles"
+    ]
+  }
+}

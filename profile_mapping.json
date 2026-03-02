@@ -1,12 +1,16 @@
 {
   "profile_mappings": {
-    "resola-deca-chatbot-dev": {
-      "onepassword_title": "AWS Deca Chatbot Dev",
-      "description": "Deca Chatbot Development Environment"
+    "your-aws-profile-name": {
+      "onepassword_title": "Your 1Password Item Title",
+      "description": "Description of this AWS environment"
     },
-    "resola-deca-chatbot-prod": {
-      "onepassword_title": "AWS Deca Chatbot Prod",
-      "description": "Deca Chatbot Production Environment"
+    "company-service-dev": {
+      "onepassword_title": "AWS Company Service Dev",
+      "description": "Development environment for Company Service"
+    },
+    "company-service-prod": {
+      "onepassword_title": "AWS Company Service Prod",
+      "description": "Production environment for Company Service"
     },
     "resola-deca-crm-dev": {
       "onepassword_title": "AWS Deca CRM Dev",

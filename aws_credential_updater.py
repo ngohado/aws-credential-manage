@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+__version__ = "1.0.0"
+
 import configparser
 import subprocess
 import os
@@ -1060,6 +1062,122 @@ class AWSCredentialUpdater:
         print(f"Summary: {success_count}/{len(mapped_profiles)} profiles updated successfully")
         return success_count == len(mapped_profiles)
     
+    def generate_mapping_file(self, output_file=None, interactive=True):
+        """Generate profile mapping file from existing AWS profiles"""
+        output_file = output_file or "profile_mapping.json"
+        
+        print("🔍 Scanning for AWS profiles...")
+        try:
+            profiles = self.get_aws_profiles()
+        except FileNotFoundError:
+            print("✗ AWS credentials file not found. Please configure AWS CLI first.")
+            print("  Run: aws configure --profile <profile-name>")
+            return False
+        
+        if not profiles:
+            print("✗ No AWS profiles found in credentials file")
+            return False
+        
+        print(f"Found {len(profiles)} AWS profiles:")
+        for i, profile in enumerate(profiles, 1):
+            print(f"  {i}. {profile['name']}")
+        
+        mapping_data = {
+            "profile_mappings": {},
+            "notes": {
+                "usage": "This file maps AWS credential profile names to their corresponding 1Password item titles",
+                "format": "profile_name -> {onepassword_title, description}",
+                "generated_on": datetime.now().isoformat(),
+                "auto_generated": True
+            }
+        }
+        
+        if interactive:
+            print("\n📝 Creating mappings (press Enter to skip a profile):")
+            
+            for profile in profiles:
+                profile_name = profile['name']
+                print(f"\n🔹 Profile: {profile_name}")
+                
+                # Suggest 1Password title based on profile name
+                suggested_title = self._suggest_1password_title(profile_name)
+                onepassword_title = input(f"  1Password item title [{suggested_title}]: ").strip()
+                onepassword_title = onepassword_title or suggested_title
+                
+                description = input(f"  Description [AWS environment for {profile_name}]: ").strip()
+                description = description or f"AWS environment for {profile_name}"
+                
+                if onepassword_title:
+                    mapping_data["profile_mappings"][profile_name] = {
+                        "onepassword_title": onepassword_title,
+                        "description": description
+                    }
+                    print(f"  ✓ Added mapping for {profile_name}")
+                else:
+                    print(f"  ⏭ Skipped {profile_name}")
+        else:
+            # Non-interactive mode - generate with suggested names
+            print("\n🤖 Auto-generating mappings...")
+            for profile in profiles:
+                profile_name = profile['name']
+                suggested_title = self._suggest_1password_title(profile_name)
+                description = f"AWS environment for {profile_name}"
+                
+                mapping_data["profile_mappings"][profile_name] = {
+                    "onepassword_title": suggested_title,
+                    "description": description
+                }
+                print(f"  ✓ Generated mapping for {profile_name}")
+        
+        # Write the mapping file
+        try:
+            with open(output_file, 'w') as f:
+                json.dump(mapping_data, f, indent=2)
+            
+            mapped_count = len(mapping_data["profile_mappings"])
+            print(f"\n✅ Generated mapping file: {output_file}")
+            print(f"   Mapped {mapped_count}/{len(profiles)} profiles")
+            
+            if mapped_count < len(profiles):
+                skipped = len(profiles) - mapped_count
+                print(f"   Skipped {skipped} profiles (you can add them later)")
+            
+            print(f"\n📋 Next steps:")
+            print(f"   1. Review and edit {output_file}")
+            print(f"   2. Ensure 1Password items exist with exact titles")
+            print(f"   3. Test with: python3 aws_credential_updater.py list")
+            
+            return True
+            
+        except Exception as e:
+            print(f"✗ Failed to write mapping file: {e}")
+            return False
+    
+    def _suggest_1password_title(self, profile_name):
+        """Suggest a 1Password title based on AWS profile name"""
+        # Convert profile name to a more readable format
+        # Examples:
+        # company-service-dev -> AWS Company Service Dev
+        # my-project-prod -> AWS My Project Prod
+        
+        parts = profile_name.replace('_', '-').split('-')
+        title_parts = []
+        
+        for part in parts:
+            # Capitalize each part
+            if part.lower() in ['dev', 'development']:
+                title_parts.append('Dev')
+            elif part.lower() in ['prod', 'production']:
+                title_parts.append('Prod')
+            elif part.lower() in ['staging', 'stage']:
+                title_parts.append('Staging')
+            elif part.lower() in ['test', 'testing']:
+                title_parts.append('Test')
+            else:
+                title_parts.append(part.title())
+        
+        return f"AWS {' '.join(title_parts)}"
+    
     def list_profiles(self):
         """List all AWS profiles"""
         profiles = self.get_aws_profiles()
@@ -1135,6 +1253,13 @@ def main():
     quarterly_parser.add_argument('--access-key-max-age', type=int, default=90,
                                   help='Maximum access key age in days (default: 90)')
     
+    # Generate mapping file
+    generate_parser = subparsers.add_parser('generate-mapping', help='Generate profile mapping file from existing AWS profiles')
+    generate_parser.add_argument('--output', default='profile_mapping.json',
+                                help='Output file name (default: profile_mapping.json)')
+    generate_parser.add_argument('--non-interactive', action='store_true',
+                                help='Generate mappings automatically without prompts')
+    
     args = parser.parse_args()
     
     if not args.command:
@@ -1187,6 +1312,9 @@ def main():
             if not updater.check_op_session():
                 return 1
             updater.update_all_credentials(args.password_max_age, args.access_key_max_age, args.dry_run)
+        elif args.command == 'generate-mapping':
+            # Don't require 1Password session for mapping generation
+            updater.generate_mapping_file(args.output, not args.non_interactive)
     except Exception as e:
         print(f"Error: {e}")
         return 1

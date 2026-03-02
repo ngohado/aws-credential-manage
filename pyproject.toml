@@ -1,0 +1,144 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "aws-credential-manager"
+version = "1.0.0"
+description = "A comprehensive tool for automating AWS IAM credential management with 1Password integration"
+readme = "README.md"
+license = "MIT"
+authors = [
+    { name = "Khai Nguyen", email = "nguyenquangkhai@example.com" },
+]
+maintainers = [
+    { name = "Khai Nguyen", email = "nguyenquangkhai@example.com" },
+]
+keywords = [
+    "aws",
+    "iam", 
+    "credentials",
+    "1password",
+    "automation",
+    "security",
+    "devops",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators", 
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Utilities",
+]
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.0.0", 
+    "pytest-mock>=3.12.0",
+    "ruff>=0.1.0",
+    "mypy>=1.8.0",
+    "pre-commit>=3.6.0",
+]
+docs = [
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.5.0",
+    "mkdocstrings[python]>=0.24.0",
+]
+test = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-mock>=3.12.0",
+    "responses>=0.24.0",
+    "freezegun>=1.4.0",
+    "testfixtures>=8.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/nguyenquangkhai/aws-credential-manage"
+Documentation = "https://github.com/nguyenquangkhai/aws-credential-manage#readme"
+Repository = "https://github.com/nguyenquangkhai/aws-credential-manage.git"
+"Bug Tracker" = "https://github.com/nguyenquangkhai/aws-credential-manage/issues"
+Changelog = "https://github.com/nguyenquangkhai/aws-credential-manage/releases"
+
+[project.scripts]
+aws-credential-manager = "aws_credential_updater:main"
+
+# Tool configuration
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings  
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+    "S",  # bandit (security)
+]
+ignore = [
+    "S101", # assert used (ok in tests)
+    "S603", # subprocess call (needed for CLI integration)
+    "S607", # subprocess with shell (needed for complex commands)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "S105", "S106"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+show_error_codes = true
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = [
+    "--strict-markers",
+    "--strict-config", 
+    "--cov=aws_credential_updater",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+
+[tool.coverage.run]
+source = ["aws_credential_updater"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
