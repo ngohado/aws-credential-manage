@@ -8,39 +8,44 @@ This is an AWS credential management tool that automates the process of updating
 
 ## Core Architecture
 
-- **Main Script**: `aws_credential_updater.py` - Single-file Python application with CLI interface
-- **Configuration**: `profile_mapping.json` - Maps AWS profile names to corresponding 1Password item titles
+- **Entry Point**: `aws_credential_updater.py` - Thin wrapper delegating to the package
+- **Package**: `aws_credential_manager/` - Modular Python package
 - **Runtime**: Uses `mise.toml` for Python 3.13 version management
+- **Alternative invocation**: `python -m aws_credential_manager`
 
-## Key Components
+## Package Structure
 
-### AWSCredentialUpdater Class
-Located in `aws_credential_updater.py`, this class handles:
-- AWS credentials file parsing (~/.aws/credentials)
-- 1Password CLI integration via `op` commands
-- AWS IAM API calls for password updates and access key management
-- Secure password generation (18+ chars, meets AWS policy)
-- Password age tracking and expiry management (90-day default)
-- Access key refresh (creation, rotation, deletion)
-- Access key age tracking and outdated key detection (100-day default)
+```
+aws_credential_manager/
+  cli/main.py                  # Argparse CLI definitions and command dispatch
+  core/credential_manager.py   # Top-level orchestrator (quarterly update, import, list)
+  core/password_manager.py     # Password rotation logic
+  core/access_key_manager.py   # Access key rotation with rollback
+  integrations/aws_client.py   # AWS IAM CLI wrapper (subprocess calls)
+  integrations/onepassword.py  # 1Password CLI wrapper + password generation
+  utils/config.py              # Constants (DEFAULT_PASSWORD_MAX_AGE, DEFAULT_ACCESS_KEY_MAX_AGE), ConfigManager
+  utils/validators.py          # Input validation utilities
+```
 
-### Profile Mapping System
-The `profile_mapping.json` file maintains mappings between:
-- AWS credential profile names (e.g., "resola-deca-chatbot-dev")
-- 1Password item titles (e.g., "AWS Deca Chatbot Dev")
-- Environment descriptions
+### Profile Naming Convention
+1Password item titles match AWS profile names exactly (e.g., profile `resola-deca-crm-dev` corresponds to 1Password item `resola-deca-crm-dev`).
+
+### Default Thresholds
+Defined in `aws_credential_manager/utils/config.py`:
+- `DEFAULT_PASSWORD_MAX_AGE = 90` days
+- `DEFAULT_ACCESS_KEY_MAX_AGE = 90` days
 
 ## Common Commands
 
 ### Basic Operations
 ```bash
-# List all AWS profiles with their 1Password mappings
+# List all AWS profiles
 python3 aws_credential_updater.py list
 
 # Update a specific profile's password
 python3 aws_credential_updater.py update <profile_name>
 
-# Update all mapped profiles
+# Update all profiles
 python3 aws_credential_updater.py update-all
 
 # Show what would be updated without making changes
@@ -125,15 +130,8 @@ python3 aws_credential_updater.py --dry-run quarterly-update
 ## Configuration Notes
 
 ### Adding New AWS Profiles
-1. Add AWS credentials to `~/.aws/credentials`
-2. Create corresponding 1Password item in the "AWS" vault
-3. Add mapping entry in `profile_mapping.json`:
-   ```json
-   "profile-name": {
-     "onepassword_title": "1Password Item Title",
-     "description": "Environment description"
-   }
-   ```
+1. Add AWS credentials to `~/.aws/credentials` with the profile name
+2. Create a 1Password item in the "AWS" vault with the **same name** as the AWS profile
 
 ### Vault Configuration
 - Default 1Password vault: "AWS"

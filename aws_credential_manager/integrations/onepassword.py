@@ -1,0 +1,91 @@
+"""1Password CLI wrapper."""
+
+import json
+import random
+import string
+import subprocess
+from typing import Optional
+
+from ..utils.config import DEFAULT_PASSWORD_LENGTH
+
+
+class OnePasswordClient:
+    """Thin wrapper around 1Password CLI commands."""
+
+    def __init__(self, vault_name: str = "AWS"):
+        self.vault_name = vault_name
+
+    def check_session(self) -> bool:
+        """Check if 1Password CLI session is active."""
+        try:
+            subprocess.run(['op', 'account', 'list'],
+                          capture_output=True, text=True, check=True)
+            return True
+        except subprocess.CalledProcessError:
+            print("Please sign in to 1Password CLI first:")
+            print("Run: op signin")
+            return False
+
+    def get_item(self, title: str) -> Optional[dict]:
+        """Get a 1Password item by title. Returns None if not found."""
+        result = subprocess.run([
+            'op', 'item', 'get', title,
+            '--vault', self.vault_name,
+            '--format', 'json'
+        ], capture_output=True, text=True)
+
+        if result.returncode != 0:
+            return None
+        return json.loads(result.stdout)
+
+    def edit_item(self, title: str, **fields: str) -> None:
+        """Update fields on a 1Password item.
+
+        Usage: edit_item("my-item", password="secret", notes="hello")
+        For typed fields use the 1Password notation in the key:
+            edit_item("my-item", **{"field[text]": "value"})
+        """
+        cmd = ['op', 'item', 'edit', title, '--vault', self.vault_name]
+        for key, value in fields.items():
+            cmd.append(f'{key}={value}')
+        subprocess.run(cmd, check=True, capture_output=True)
+
+    def edit_item_generate_password(self, title: str, recipe: str = "letters,digits,symbols,18",
+                                     **extra_fields: str) -> None:
+        """Update a 1Password item with a generated password."""
+        cmd = [
+            'op', 'item', 'edit', title,
+            '--vault', self.vault_name,
+            f'--generate-password={recipe}',
+        ]
+        for key, value in extra_fields.items():
+            cmd.append(f'{key}={value}')
+        subprocess.run(cmd, check=True, capture_output=True)
+
+    def get_field_value(self, item_data: dict, label: str) -> Optional[str]:
+        """Extract a field value from 1Password item data by label."""
+        for field in item_data.get('fields', []):
+            if field.get('label') == label:
+                return field.get('value')
+        return None
+
+    def generate_password(self, length: int = DEFAULT_PASSWORD_LENGTH) -> str:
+        """Generate a secure password meeting AWS policy requirements."""
+        uppercase = string.ascii_uppercase
+        lowercase = string.ascii_lowercase
+        digits = string.digits
+        symbols = "!@#$%^&*()-_=+[]{}|;:,.<>?"
+
+        password_chars = [
+            random.choice(uppercase),
+            random.choice(lowercase),
+            random.choice(digits),
+            random.choice(symbols),
+        ]
+
+        all_chars = uppercase + lowercase + digits + symbols
+        for _ in range(length - 4):
+            password_chars.append(random.choice(all_chars))
+
+        random.shuffle(password_chars)
+        return ''.join(password_chars)
