@@ -3,23 +3,22 @@
 import json
 import os
 from datetime import datetime
-from typing import Optional
 
 from ..integrations.aws_client import AWSClient
 from ..integrations.onepassword import OnePasswordClient
 from ..utils.config import (
-    ConfigManager,
-    DEFAULT_PASSWORD_MAX_AGE,
     DEFAULT_ACCESS_KEY_MAX_AGE,
+    DEFAULT_PASSWORD_MAX_AGE,
+    ConfigManager,
 )
-from .password_manager import PasswordManager
 from .access_key_manager import AccessKeyManager
+from .password_manager import PasswordManager
 
 
 class CredentialManager:
     """Top-level orchestrator for all credential operations."""
 
-    def __init__(self, credentials_path: Optional[str] = None, vault_name: str = "AWS"):
+    def __init__(self, credentials_path: str | None = None, vault_name: str = "AWS"):
         self.config = ConfigManager(credentials_path, vault_name)
         self.aws = AWSClient()
         self.op = OnePasswordClient(vault_name)
@@ -41,7 +40,7 @@ class CredentialManager:
             print(f"     1Password: {profile_name}")
             print()
 
-    def import_credentials(self, profile_name: Optional[str] = None, dry_run: bool = False) -> bool:
+    def import_credentials(self, profile_name: str | None = None, dry_run: bool = False) -> bool:
         """Import AWS access keys from credentials file to 1Password items."""
         profiles = self.config.get_aws_profiles()
 
@@ -78,14 +77,22 @@ class CredentialManager:
                     print(f"✗ 1Password item not found: {pname}")
                     continue
 
-                has_access_key = self.op.get_field_value(item_data, 'aws_access_key_id') is not None
-                has_secret_key = self.op.get_field_value(item_data, 'aws_secret_access_key') is not None
+                has_access_key = (
+                    self.op.get_field_value(item_data, 'aws_access_key_id') is not None
+                )
+                has_secret_key = (
+                    self.op.get_field_value(item_data, 'aws_secret_access_key')
+                    is not None
+                )
 
                 self.op.edit_item(pname,
                                   **{
-                                      'aws_access_key_id[text]': profile['access_key_id'],
-                                      'aws_secret_access_key[password]': profile['secret_access_key'],
-                                      'credential_import_date[text]': datetime.now().isoformat()
+                                      'aws_access_key_id[text]':
+                                          profile['access_key_id'],
+                                      'aws_secret_access_key[password]':
+                                          profile['secret_access_key'],
+                                      'credential_import_date[text]':
+                                          datetime.now().isoformat()
                                   })
 
                 action = "Updated" if (has_access_key or has_secret_key) else "Added"
@@ -95,11 +102,14 @@ class CredentialManager:
             except Exception as e:
                 print(f"✗ Failed to import credentials for {pname}: {e}")
 
-        print(f"\n📊 Summary: {success_count}/{len(target_profiles)} profiles imported successfully")
+        print(
+            f"\n📊 Summary: {success_count}/{len(target_profiles)} profiles "
+            "imported successfully"
+        )
         return success_count == len(target_profiles)
 
-    def quarterly_update(self, password_max_age: Optional[int] = None,
-                          access_key_max_age: Optional[int] = None,
+    def quarterly_update(self, password_max_age: int | None = None,
+                          access_key_max_age: int | None = None,
                           dry_run: bool = False) -> bool:
         """Update both passwords and access keys (quarterly maintenance)."""
         password_max_age = password_max_age or DEFAULT_PASSWORD_MAX_AGE
@@ -117,7 +127,9 @@ class CredentialManager:
         password_success = self.passwords.update_expired(password_max_age, dry_run)
 
         print("\n📍 Step 2: Updating outdated access keys...")
-        access_key_success = self.access_keys.update_outdated(access_key_max_age, dry_run)
+        access_key_success = self.access_keys.update_outdated(
+            access_key_max_age, dry_run
+        )
 
         print("\n" + "=" * 60)
         print("🎯 QUARTERLY CREDENTIAL UPDATE SUMMARY:")
@@ -125,7 +137,10 @@ class CredentialManager:
         print(f"  Access Keys: {'✅ Success' if access_key_success else '❌ Some failures'}")
 
         overall_success = password_success and access_key_success
-        print(f"  Overall: {'✅ Complete success!' if overall_success else '⚠️ Check logs for issues'}")
+        overall_msg = (
+            '✅ Complete success!' if overall_success else '⚠️ Check logs for issues'
+        )
+        print(f"  Overall: {overall_msg}")
 
         if not dry_run:
             self._log_quarterly_update({
@@ -143,7 +158,9 @@ class CredentialManager:
     def _log_quarterly_update(self, log_entry: dict) -> None:
         """Log quarterly update results."""
         try:
-            log_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "quarterly_updates.log")
+            log_file = os.path.join(
+                os.path.dirname(os.path.dirname(__file__)), "quarterly_updates.log"
+            )
             with open(log_file, "a") as f:
                 f.write(f"{json.dumps(log_entry)}\n")
             print(f"📝 Logged update to: {log_file}")

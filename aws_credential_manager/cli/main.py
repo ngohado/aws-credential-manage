@@ -4,14 +4,21 @@ import argparse
 import sys
 
 from ..core.credential_manager import CredentialManager
-from ..utils.config import DEFAULT_PASSWORD_MAX_AGE, DEFAULT_ACCESS_KEY_MAX_AGE
+from ..utils.config import DEFAULT_ACCESS_KEY_MAX_AGE, DEFAULT_PASSWORD_MAX_AGE
 
 
-def main():
-    parser = argparse.ArgumentParser(description='AWS Credential Password Updater with 1Password')
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description='AWS Credential Password Updater with 1Password'
+    )
     parser.add_argument('--credentials-path', help='Path to AWS credentials file')
-    parser.add_argument('--vault', default='AWS', help='1Password vault name (default: AWS)')
-    parser.add_argument('--dry-run', action='store_true', help='Show what would be updated without making changes')
+    parser.add_argument(
+        '--vault', default='AWS', help='1Password vault name (default: AWS)'
+    )
+    parser.add_argument(
+        '--dry-run', action='store_true',
+        help='Show what would be updated without making changes',
+    )
 
     subparsers = parser.add_subparsers(dest='command', help='Available commands')
 
@@ -26,45 +33,82 @@ def main():
     subparsers.add_parser('update-all', help='Update all profiles')
 
     # List expired passwords
-    expired_parser = subparsers.add_parser('list-expired', help='List profiles with expired passwords')
-    expired_parser.add_argument('--max-age', type=int, default=DEFAULT_PASSWORD_MAX_AGE,
-                               help=f'Maximum password age in days (default: {DEFAULT_PASSWORD_MAX_AGE})')
+    expired_parser = subparsers.add_parser(
+        'list-expired', help='List profiles with expired passwords'
+    )
+    expired_parser.add_argument(
+        '--max-age', type=int, default=DEFAULT_PASSWORD_MAX_AGE,
+        help=f'Maximum password age in days (default: {DEFAULT_PASSWORD_MAX_AGE})',
+    )
 
     # Update expired passwords
-    update_expired_parser = subparsers.add_parser('update-expired', help='Update all expired passwords')
-    update_expired_parser.add_argument('--max-age', type=int, default=DEFAULT_PASSWORD_MAX_AGE,
-                                      help=f'Maximum password age in days (default: {DEFAULT_PASSWORD_MAX_AGE})')
+    update_expired_parser = subparsers.add_parser(
+        'update-expired', help='Update all expired passwords'
+    )
+    update_expired_parser.add_argument(
+        '--max-age', type=int, default=DEFAULT_PASSWORD_MAX_AGE,
+        help=f'Maximum password age in days (default: {DEFAULT_PASSWORD_MAX_AGE})',
+    )
 
     # Import credentials
-    import_parser = subparsers.add_parser('import-credentials', help='Import AWS credentials to 1Password')
-    import_parser.add_argument('profile_name', nargs='?', help='Profile name to import (optional, imports all if not specified)')
+    import_parser = subparsers.add_parser(
+        'import-credentials', help='Import AWS credentials to 1Password'
+    )
+    import_parser.add_argument(
+        'profile_name', nargs='?',
+        help='Profile name to import (optional, imports all if not specified)',
+    )
 
     # Import all credentials
-    subparsers.add_parser('import-all-credentials', help='Import all AWS credentials to 1Password')
+    subparsers.add_parser(
+        'import-all-credentials', help='Import all AWS credentials to 1Password'
+    )
 
     # Refresh access key for single profile
-    refresh_parser = subparsers.add_parser('refresh-access-key', help='Refresh (recreate) AWS access key for a specific profile')
-    refresh_parser.add_argument('profile_name', help='Name of the profile to refresh access key for')
+    refresh_parser = subparsers.add_parser(
+        'refresh-access-key',
+        help='Refresh (recreate) AWS access key for a specific profile',
+    )
+    refresh_parser.add_argument(
+        'profile_name', help='Name of the profile to refresh access key for'
+    )
 
     # Refresh access keys for all profiles
-    subparsers.add_parser('refresh-all-access-keys', help='Refresh access keys for all profiles')
+    subparsers.add_parser(
+        'refresh-all-access-keys', help='Refresh access keys for all profiles'
+    )
 
     # List outdated access keys
-    outdated_keys_parser = subparsers.add_parser('list-outdated-access-keys', help='List profiles with outdated access keys')
-    outdated_keys_parser.add_argument('--max-age', type=int, default=DEFAULT_ACCESS_KEY_MAX_AGE,
-                                     help=f'Maximum access key age in days (default: {DEFAULT_ACCESS_KEY_MAX_AGE})')
+    outdated_keys_parser = subparsers.add_parser(
+        'list-outdated-access-keys', help='List profiles with outdated access keys'
+    )
+    outdated_keys_parser.add_argument(
+        '--max-age', type=int, default=DEFAULT_ACCESS_KEY_MAX_AGE,
+        help=f'Maximum access key age in days (default: {DEFAULT_ACCESS_KEY_MAX_AGE})',
+    )
 
     # Update outdated access keys
-    update_outdated_keys_parser = subparsers.add_parser('update-outdated-access-keys', help='Update all outdated access keys')
-    update_outdated_keys_parser.add_argument('--max-age', type=int, default=DEFAULT_ACCESS_KEY_MAX_AGE,
-                                             help=f'Maximum access key age in days (default: {DEFAULT_ACCESS_KEY_MAX_AGE})')
+    update_outdated_keys_parser = subparsers.add_parser(
+        'update-outdated-access-keys', help='Update all outdated access keys'
+    )
+    update_outdated_keys_parser.add_argument(
+        '--max-age', type=int, default=DEFAULT_ACCESS_KEY_MAX_AGE,
+        help=f'Maximum access key age in days (default: {DEFAULT_ACCESS_KEY_MAX_AGE})',
+    )
 
     # Quarterly update
-    quarterly_parser = subparsers.add_parser('quarterly-update', help='Update both passwords and access keys (for scheduled maintenance)')
-    quarterly_parser.add_argument('--password-max-age', type=int, default=DEFAULT_PASSWORD_MAX_AGE,
-                                  help=f'Maximum password age in days (default: {DEFAULT_PASSWORD_MAX_AGE})')
-    quarterly_parser.add_argument('--access-key-max-age', type=int, default=DEFAULT_ACCESS_KEY_MAX_AGE,
-                                  help=f'Maximum access key age in days (default: {DEFAULT_ACCESS_KEY_MAX_AGE})')
+    quarterly_parser = subparsers.add_parser(
+        'quarterly-update',
+        help='Update both passwords and access keys (for scheduled maintenance)',
+    )
+    quarterly_parser.add_argument(
+        '--password-max-age', type=int, default=DEFAULT_PASSWORD_MAX_AGE,
+        help=f'Maximum password age in days (default: {DEFAULT_PASSWORD_MAX_AGE})',
+    )
+    quarterly_parser.add_argument(
+        '--access-key-max-age', type=int, default=DEFAULT_ACCESS_KEY_MAX_AGE,
+        help=f'Maximum access key age in days (default: {DEFAULT_ACCESS_KEY_MAX_AGE})',
+    )
 
     args = parser.parse_args()
 
@@ -121,7 +165,9 @@ def main():
         elif args.command == 'quarterly-update':
             if not mgr.check_op_session():
                 return 1
-            mgr.quarterly_update(args.password_max_age, args.access_key_max_age, args.dry_run)
+            mgr.quarterly_update(
+                args.password_max_age, args.access_key_max_age, args.dry_run
+            )
     except Exception as e:
         print(f"Error: {e}")
         return 1

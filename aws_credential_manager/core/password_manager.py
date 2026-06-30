@@ -1,11 +1,10 @@
 """Password management for AWS console passwords."""
 
 from datetime import datetime
-from typing import Optional
 
 from ..integrations.aws_client import AWSClient
 from ..integrations.onepassword import OnePasswordClient
-from ..utils.config import ConfigManager, DEFAULT_PASSWORD_MAX_AGE
+from ..utils.config import DEFAULT_PASSWORD_MAX_AGE, ConfigManager
 
 
 class PasswordManager:
@@ -16,17 +15,30 @@ class PasswordManager:
         self.op = op
         self.config = config
 
-    def get_password_age(self, profile_name: str) -> Optional[dict]:
-        """Get password age from 1Password last_password_update field."""
+    def get_password_age(self, profile_name: str) -> dict | None:
+        """Get password age, preferring AWS IAM credential report over 1Password."""
+        # --- Primary source: AWS IAM credential report ---
+        try:
+            aws_timestamp = self.aws.get_password_last_changed(profile_name)
+            if aws_timestamp:
+                last_date = datetime.fromisoformat(aws_timestamp.replace('Z', '+00:00'))
+                age_days = (datetime.now(last_date.tzinfo) - last_date).days
+                return {
+                    'last_update': aws_timestamp,
+                    'age_days': age_days,
+                    'expired': age_days >= DEFAULT_PASSWORD_MAX_AGE,
+                    'source': 'AWS IAM',
+                }
+        except Exception as e:
+            print(f"⚠ Could not fetch AWS password age for {profile_name}: {e}")
+
+        # --- Fallback: 1Password metadata ---
         item_data = self.op.get_item(profile_name)
         if not item_data:
             return None
 
         try:
             last_update = self.op.get_field_value(item_data, 'last_password_update')
-
-            if not last_update:
-                last_update = item_data.get('updated_at')
 
             if last_update:
                 if 'T' in last_update:
@@ -40,7 +52,7 @@ class PasswordManager:
                     'last_update': last_update,
                     'age_days': age_days,
                     'expired': age_days >= DEFAULT_PASSWORD_MAX_AGE,
-                    'source': '1Password'
+                    'source': '1Password (fallback)',
                 }
         except (ValueError, TypeError) as e:
             print(f"✗ Failed to get 1Password timestamp for {profile_name}: {e}")
@@ -52,10 +64,10 @@ class PasswordManager:
         if dry_run:
             print(f"[DRY RUN] Would update AWS console password for '{profile_name}':")
             print(f"  1Password Item: {profile_name}")
-            print(f"  Actions:")
-            print(f"    1. Generate secure password (18+ chars, meets AWS policy)")
-            print(f"    2. Update AWS console password via IAM API")
-            print(f"    3. Store new password in 1Password")
+            print("  Actions:")
+            print("    1. Generate secure password (18+ chars, meets AWS policy)")
+            print("    2. Update AWS console password via IAM API")
+            print("    3. Store new password in 1Password")
             return True
 
         # Check if AWS credentials are valid
@@ -65,7 +77,7 @@ class PasswordManager:
             print(f"⚠️ Skipping {profile_name}: Invalid AWS credentials")
             error_str = str(e)
             if "InvalidClientTokenId" in error_str:
-                print(f"  Reason: AWS access keys are expired or invalid")
+                print("  Reason: AWS access keys are expired or invalid")
             else:
                 print(f"  Reason: {error_str}")
             print(f"  Note: Fix AWS credentials for {profile_name} to enable password updates")
@@ -91,7 +103,7 @@ class PasswordManager:
         try:
             self.op.edit_item(profile_name,
                               password=new_password,
-                              **{f'last_password_update[text]': datetime.now().isoformat()})
+                              **{'last_password_update[text]': datetime.now().isoformat()})
             print(f"✓ Updated 1Password password for: {profile_name}")
         except Exception as e:
             print(f"✗ Failed to update 1Password for {profile_name}: {e}")
@@ -100,7 +112,7 @@ class PasswordManager:
         print(f"✓ Successfully updated both AWS and 1Password for: {profile_name}")
         return True
 
-    def list_expired(self, max_age_days: Optional[int] = None) -> list[dict]:
+    def list_expired(self, max_age_days: int | None = None) -> list[dict]:
         """List all profiles with expired passwords."""
         max_age_days = max_age_days or DEFAULT_PASSWORD_MAX_AGE
         expired_profiles = []
@@ -141,13 +153,13 @@ class PasswordManager:
             else:
                 print(f"⚠️  UNKNOWN {profile_name}")
                 print(f"    1Password: {profile_name}")
-                print(f"    Could not check password age")
+                print("    Could not check password age")
                 print()
 
         print(f"Summary: {len(expired_profiles)}/{len(profiles)} profiles have expired passwords")
         return expired_profiles
 
-    def update_expired(self, max_age_days: Optional[int] = None, dry_run: bool = False) -> bool:
+    def update_expired(self, max_age_days: int | None = None, dry_run: bool = False) -> bool:
         """Update all profiles with expired passwords."""
         expired_profiles = self.list_expired(max_age_days)
 
@@ -175,7 +187,10 @@ class PasswordManager:
             else:
                 print(f"❌ Failed to update {profile_name}")
 
-        print(f"\n📊 Summary: {success_count}/{len(expired_profiles)} expired passwords updated successfully")
+        print(
+            f"\n📊 Summary: {success_count}/{len(expired_profiles)} expired "
+            "passwords updated successfully"
+        )
         return success_count == len(expired_profiles)
 
     def update_all(self, dry_run: bool = False) -> bool:

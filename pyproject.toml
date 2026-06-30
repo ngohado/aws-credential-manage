@@ -71,11 +71,11 @@ Repository = "https://github.com/nguyenquangkhai/aws-credential-manage.git"
 Changelog = "https://github.com/nguyenquangkhai/aws-credential-manage/releases"
 
 [project.scripts]
-aws-credential-manager = "aws_credential_updater:main"
+aws-credential-manager = "aws_credential_manager.cli.main:main"
 
 # Tool configuration
 [tool.ruff]
-line-length = 88
+line-length = 100
 target-version = "py311"
 
 [tool.ruff.lint]
@@ -119,7 +119,7 @@ python_functions = "test_*"
 addopts = [
     "--strict-markers",
     "--strict-config", 
-    "--cov=aws_credential_updater",
+    "--cov=aws_credential_manager",
     "--cov-report=term-missing",
     "--cov-report=html",
     "--cov-report=xml",
@@ -131,7 +131,7 @@ markers = [
 ]
 
 [tool.coverage.run]
-source = ["aws_credential_updater"]
+source = ["aws_credential_manager"]
 omit = ["tests/*"]
 
 [tool.coverage.report]

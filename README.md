@@ -1,5 +1,10 @@
 # AWS Credential Manager
 
+[![CI](https://github.com/nguyenquangkhai/aws-credential-manage/actions/workflows/ci.yml/badge.svg)](https://github.com/nguyenquangkhai/aws-credential-manage/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue.svg)](pyproject.toml)
+[![Code style: ruff](https://img.shields.io/badge/lint-ruff-261230.svg)](https://github.com/astral-sh/ruff)
+
 A comprehensive tool for automating AWS IAM credential management, integrating with 1Password for secure password storage and featuring automatic quarterly maintenance.
 
 ## Features
@@ -72,10 +77,28 @@ See [CLAUDE.md](CLAUDE.md) for comprehensive usage documentation, including:
 - Comprehensive error handling with rollback capabilities
 - No secrets logged or exposed in error messages
 
+## Development
+
+```bash
+# Install with dev tooling
+pip install -e ".[dev]"
+
+# Run the test suite (with coverage)
+pytest
+
+# Lint and type-check
+ruff check .
+mypy aws_credential_manager
+```
+
+CI runs lint, type-check, and tests on Python 3.11–3.13 for every push and
+pull request. See [.github/workflows/ci.yml](.github/workflows/ci.yml).
+
 ## License
 
-MIT License - See LICENSE file for details.
+MIT License - See [LICENSE](LICENSE) file for details.
 
 ## Contributing
 
-Please read the contributing guidelines and ensure all changes include appropriate tests and documentation updates.
+See [CONTRIBUTING.md](CONTRIBUTING.md). All changes should include appropriate
+tests and pass CI. Report security issues per [SECURITY.md](SECURITY.md).

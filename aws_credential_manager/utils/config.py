@@ -2,12 +2,10 @@
 
 import configparser
 import os
-from typing import Optional
-
 
 # Default expiry thresholds (days)
-DEFAULT_PASSWORD_MAX_AGE = 90
-DEFAULT_ACCESS_KEY_MAX_AGE = 90
+DEFAULT_PASSWORD_MAX_AGE = 70
+DEFAULT_ACCESS_KEY_MAX_AGE = 70
 
 # Default vault name
 DEFAULT_VAULT = "AWS"
@@ -19,7 +17,7 @@ DEFAULT_PASSWORD_LENGTH = 18
 class ConfigManager:
     """Manages configuration for AWS credential manager."""
 
-    def __init__(self, credentials_path: Optional[str] = None, vault_name: str = DEFAULT_VAULT):
+    def __init__(self, credentials_path: str | None = None, vault_name: str = DEFAULT_VAULT):
         self.credentials_path = credentials_path or os.path.expanduser("~/.aws/credentials")
         self.vault_name = vault_name
 

@@ -1,10 +1,10 @@
 """1Password CLI wrapper."""
 
 import json
-import random
+import secrets
 import string
 import subprocess
-from typing import Optional
+from typing import cast
 
 from ..utils.config import DEFAULT_PASSWORD_LENGTH
 
@@ -26,7 +26,7 @@ class OnePasswordClient:
             print("Run: op signin")
             return False
 
-    def get_item(self, title: str) -> Optional[dict]:
+    def get_item(self, title: str) -> dict | None:
         """Get a 1Password item by title. Returns None if not found."""
         result = subprocess.run([
             'op', 'item', 'get', title,
@@ -36,7 +36,7 @@ class OnePasswordClient:
 
         if result.returncode != 0:
             return None
-        return json.loads(result.stdout)
+        return cast(dict, json.loads(result.stdout))
 
     def edit_item(self, title: str, **fields: str) -> None:
         """Update fields on a 1Password item.
@@ -62,11 +62,11 @@ class OnePasswordClient:
             cmd.append(f'{key}={value}')
         subprocess.run(cmd, check=True, capture_output=True)
 
-    def get_field_value(self, item_data: dict, label: str) -> Optional[str]:
+    def get_field_value(self, item_data: dict, label: str) -> str | None:
         """Extract a field value from 1Password item data by label."""
         for field in item_data.get('fields', []):
             if field.get('label') == label:
-                return field.get('value')
+                return cast("str | None", field.get('value'))
         return None
 
     def generate_password(self, length: int = DEFAULT_PASSWORD_LENGTH) -> str:
@@ -77,15 +77,18 @@ class OnePasswordClient:
         symbols = "!@#$%^&*()-_=+[]{}|;:,.<>?"
 
         password_chars = [
-            random.choice(uppercase),
-            random.choice(lowercase),
-            random.choice(digits),
-            random.choice(symbols),
+            secrets.choice(uppercase),
+            secrets.choice(lowercase),
+            secrets.choice(digits),
+            secrets.choice(symbols),
         ]
 
         all_chars = uppercase + lowercase + digits + symbols
         for _ in range(length - 4):
-            password_chars.append(random.choice(all_chars))
+            password_chars.append(secrets.choice(all_chars))
 
-        random.shuffle(password_chars)
+        # Fisher-Yates shuffle using a CSPRNG (secrets has no shuffle helper).
+        for i in range(len(password_chars) - 1, 0, -1):
+            j = secrets.randbelow(i + 1)
+            password_chars[i], password_chars[j] = password_chars[j], password_chars[i]
         return ''.join(password_chars)

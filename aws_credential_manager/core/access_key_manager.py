@@ -5,11 +5,10 @@ import os
 import subprocess
 import time
 from datetime import datetime
-from typing import Optional
 
 from ..integrations.aws_client import AWSClient
 from ..integrations.onepassword import OnePasswordClient
-from ..utils.config import ConfigManager, DEFAULT_ACCESS_KEY_MAX_AGE
+from ..utils.config import DEFAULT_ACCESS_KEY_MAX_AGE, ConfigManager
 
 
 class AccessKeyManager:
@@ -20,7 +19,7 @@ class AccessKeyManager:
         self.op = op
         self.config = config
 
-    def get_access_key_age(self, profile_name: str) -> Optional[dict]:
+    def get_access_key_age(self, profile_name: str) -> dict | None:
         """Get access key age from AWS API."""
         try:
             user = self.aws.get_user(profile_name)
@@ -47,7 +46,10 @@ class AccessKeyManager:
                     break
 
             if not current_key_info:
-                print(f"⚠️ Current access key {current_access_key_id} not found in AWS (may be deleted)")
+                print(
+                    f"⚠️ Current access key {current_access_key_id} not found "
+                    "in AWS (may be deleted)"
+                )
                 return None
 
             create_date_str = current_key_info['CreateDate']
@@ -115,7 +117,7 @@ class AccessKeyManager:
             ])
 
             if not backup_files:
-                print(f"✗ No backup files found to restore from")
+                print("✗ No backup files found to restore from")
                 return False
 
             latest_backup = os.path.join(os.path.dirname(credentials_path), backup_files[-1])
@@ -125,7 +127,10 @@ class AccessKeyManager:
 
         except (subprocess.CalledProcessError, OSError) as e:
             print(f"✗ Failed to restore credentials from backup: {e}")
-            print(f"  Please manually restore using: cp {credentials_path}.backup.* {credentials_path}")
+            print(
+                f"  Please manually restore using: "
+                f"cp {credentials_path}.backup.* {credentials_path}"
+            )
             return False
 
     def _test_new_credentials(self, profile_name: str, max_retries: int = 5,
@@ -140,17 +145,35 @@ class AccessKeyManager:
                 return True
             except subprocess.CalledProcessError as e:
                 if attempt < max_retries - 1:
-                    if "InvalidClientTokenId" in str(e.stderr) or "The security token included in the request is invalid" in str(e.stderr):
+                    stderr = str(e.stderr)
+                    propagating = (
+                        "InvalidClientTokenId" in stderr
+                        or "The security token included in the request is invalid"
+                        in stderr
+                    )
+                    if propagating:
                         delay = initial_delay * (2 ** attempt)
-                        print(f"  Attempt {attempt + 1}/{max_retries}: Credentials still propagating, waiting {delay}s...")
+                        print(
+                            f"  Attempt {attempt + 1}/{max_retries}: Credentials "
+                            f"still propagating, waiting {delay}s..."
+                        )
                         time.sleep(delay)
                         continue
                     else:
-                        print(f"✗ New credentials for {profile_name} failed with non-propagation error: {e}")
+                        print(
+                            f"✗ New credentials for {profile_name} failed with "
+                            f"non-propagation error: {e}"
+                        )
                         return False
                 else:
-                    print(f"✗ New credentials for {profile_name} failed after {max_retries} attempts: {e}")
-                    print("  This may indicate an AWS service issue or the credentials are genuinely invalid")
+                    print(
+                        f"✗ New credentials for {profile_name} failed after "
+                        f"{max_retries} attempts: {e}"
+                    )
+                    print(
+                        "  This may indicate an AWS service issue or the "
+                        "credentials are genuinely invalid"
+                    )
                     return False
 
         return False
@@ -172,16 +195,19 @@ class AccessKeyManager:
         if dry_run:
             print(f"[DRY RUN] Would refresh AWS access key for '{profile_name}':")
             print(f"  1Password Item: {profile_name}")
-            print(f"  Actions:")
-            print(f"    1. Get current user info and access keys")
-            print(f"    2. Create new access key pair")
-            print(f"    3. Update local credentials file (~/.aws/credentials)")
-            print(f"    4. Wait for AWS credential propagation (3 seconds + retry logic)")
-            print(f"    5. Test new credentials (up to 5 attempts with exponential backoff)")
-            print(f"    6. Record access key refresh metadata in 1Password")
-            print(f"    7. Delete old access key")
-            print(f"  Note: Access keys will only be stored in ~/.aws/credentials (not in 1Password)")
-            print(f"  Safety: Automatic rollback and cleanup if any step fails")
+            print("  Actions:")
+            print("    1. Get current user info and access keys")
+            print("    2. Create new access key pair")
+            print("    3. Update local credentials file (~/.aws/credentials)")
+            print("    4. Wait for AWS credential propagation (3 seconds + retry logic)")
+            print("    5. Test new credentials (up to 5 attempts with exponential backoff)")
+            print("    6. Record access key refresh metadata in 1Password")
+            print("    7. Delete old access key")
+            print(
+                "  Note: Access keys will only be stored in ~/.aws/credentials "
+                "(not in 1Password)"
+            )
+            print("  Safety: Automatic rollback and cleanup if any step fails")
             return True
 
         print(f"🔄 Refreshing access key for: {profile_name}")
@@ -208,21 +234,25 @@ class AccessKeyManager:
         old_access_key_id = current_keys[0]['AccessKeyId'] if current_keys else None
 
         # Step 3: Update local credentials file
-        if not self._update_credentials_file(profile_name, new_key['AccessKeyId'], new_key['SecretAccessKey']):
-            print(f"✗ Failed to update credentials file, cleaning up...")
+        if not self._update_credentials_file(
+            profile_name, new_key['AccessKeyId'], new_key['SecretAccessKey']
+        ):
+            print("✗ Failed to update credentials file, cleaning up...")
             try:
-                self.aws.delete_access_key(profile_name, username, new_key['AccessKeyId'])
-            except Exception:
+                self.aws.delete_access_key(
+                    profile_name, username, new_key['AccessKeyId']
+                )
+            except Exception:  # noqa: S110 - cleanup best-effort during rollback
                 pass
             return False
 
         # Step 4: Wait for propagation
-        print(f"⏱️  Waiting for AWS credential propagation (3 seconds)...")
+        print("⏱️  Waiting for AWS credential propagation (3 seconds)...")
         time.sleep(3)
 
         # Step 5: Test new credentials
         if not self._test_new_credentials(profile_name):
-            print(f"✗ New credentials failed testing, rolling back...")
+            print("✗ New credentials failed testing, rolling back...")
             print(f"  Deleting newly created access key: {new_key['AccessKeyId']}")
             try:
                 subprocess.run([
@@ -233,11 +263,11 @@ class AccessKeyManager:
                 print(f"  ✓ Deleted failed access key: {new_key['AccessKeyId']}")
             except (subprocess.CalledProcessError, Exception) as e:
                 print(f"  ⚠️ Could not delete failed access key {new_key['AccessKeyId']}: {e}")
-                print(f"  Please manually delete it from the AWS console")
+                print("  Please manually delete it from the AWS console")
 
-            print(f"  Attempting to restore credentials from backup...")
+            print("  Attempting to restore credentials from backup...")
             if not self._restore_credentials_from_backup(profile_name):
-                print(f"  Please manually restore credentials from backup file:")
+                print("  Please manually restore credentials from backup file:")
                 print(f"    cp {credentials_path}.backup.* {credentials_path}")
 
             return False
@@ -251,7 +281,7 @@ class AccessKeyManager:
                               })
             print(f"✓ Updated 1Password metadata for: {profile_name}")
         except subprocess.CalledProcessError:
-            print(f"⚠️ Failed to update 1Password metadata, but access key refresh succeeded")
+            print("⚠️ Failed to update 1Password metadata, but access key refresh succeeded")
 
         # Step 7: Delete old access key
         if old_access_key_id:
@@ -260,7 +290,7 @@ class AccessKeyManager:
                 print(f"✓ Deleted old access key: {old_access_key_id}")
             except Exception:
                 print(f"⚠️ Failed to delete old access key: {old_access_key_id}")
-                print(f"  New key is working, but please manually delete the old one")
+                print("  New key is working, but please manually delete the old one")
 
         print(f"✓ Successfully refreshed access key for: {profile_name}")
         return True
@@ -280,7 +310,7 @@ class AccessKeyManager:
         print(f"Summary: {success_count}/{len(profile_names)} access keys refreshed successfully")
         return success_count == len(profile_names)
 
-    def list_outdated(self, max_age_days: Optional[int] = None) -> list[dict]:
+    def list_outdated(self, max_age_days: int | None = None) -> list[dict]:
         """List all profiles with outdated access keys."""
         max_age_days = max_age_days or DEFAULT_ACCESS_KEY_MAX_AGE
         outdated_profiles = []
@@ -316,13 +346,16 @@ class AccessKeyManager:
             else:
                 print(f"⚠️  UNKNOWN {profile_name}")
                 print(f"    1Password: {profile_name}")
-                print(f"    Could not check access key age")
+                print("    Could not check access key age")
                 print()
 
-        print(f"Summary: {len(outdated_profiles)}/{len(profiles)} profiles have outdated access keys")
+        print(
+            f"Summary: {len(outdated_profiles)}/{len(profiles)} profiles "
+            "have outdated access keys"
+        )
         return outdated_profiles
 
-    def update_outdated(self, max_age_days: Optional[int] = None, dry_run: bool = False) -> bool:
+    def update_outdated(self, max_age_days: int | None = None, dry_run: bool = False) -> bool:
         """Update all profiles with outdated access keys."""
         outdated_profiles = self.list_outdated(max_age_days)
 
@@ -353,5 +386,8 @@ class AccessKeyManager:
             else:
                 print(f"❌ Failed to refresh {profile_name}")
 
-        print(f"\n📊 Summary: {success_count}/{len(outdated_profiles)} outdated access keys refreshed successfully")
+        print(
+            f"\n📊 Summary: {success_count}/{len(outdated_profiles)} outdated "
+            "access keys refreshed successfully"
+        )
         return success_count == len(outdated_profiles)

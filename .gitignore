@@ -6,6 +6,15 @@ __pycache__/
 .Python
 *.so
 
+# Test / coverage artifacts
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+coverage.xml
+.coverage
+.coverage.*
+
 # Environment
 .env
 .venv
