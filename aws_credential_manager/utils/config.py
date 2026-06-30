@@ -4,8 +4,8 @@ import configparser
 import os
 
 # Default expiry thresholds (days)
-DEFAULT_PASSWORD_MAX_AGE = 70
-DEFAULT_ACCESS_KEY_MAX_AGE = 70
+DEFAULT_PASSWORD_MAX_AGE = 90
+DEFAULT_ACCESS_KEY_MAX_AGE = 90
 
 # Default vault name
 DEFAULT_VAULT = "AWS"

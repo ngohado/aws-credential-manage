@@ -9,10 +9,10 @@ description = "A comprehensive tool for automating AWS IAM credential management
 readme = "README.md"
 license = "MIT"
 authors = [
-    { name = "Khai Nguyen", email = "nguyenquangkhai@example.com" },
+    { name = "Khai Nguyen", email = "khai.nguyenquang27@gmail.com" },
 ]
 maintainers = [
-    { name = "Khai Nguyen", email = "nguyenquangkhai@example.com" },
+    { name = "Khai Nguyen", email = "khai.nguyenquang27@gmail.com" },
 ]
 keywords = [
     "aws",

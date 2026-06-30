@@ -21,6 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Coverage configuration now targets the `aws_credential_manager` package
   instead of the legacy `aws_credential_updater` wrapper module.
 - Ruff line length raised from 88 to 100; existing long lines reflowed.
+- Default password and access key max age set to 90 days, matching the
+  documented rotation policy (was 70).
+
+### Fixed
+- Package author/maintainer email corrected from a placeholder.
 
 ## [1.0.0] - 2025-03-02
 
