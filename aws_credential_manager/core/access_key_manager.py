@@ -9,6 +9,7 @@ from datetime import datetime
 from ..integrations.aws_client import AWSClient
 from ..integrations.onepassword import OnePasswordClient
 from ..utils.config import DEFAULT_ACCESS_KEY_MAX_AGE, ConfigManager
+from .password_manager import PasswordManager
 
 
 class AccessKeyManager:
@@ -18,6 +19,7 @@ class AccessKeyManager:
         self.aws = aws
         self.op = op
         self.config = config
+        self.passwords = PasswordManager(aws, op, config)
 
     def get_access_key_age(self, profile_name: str) -> dict | None:
         """Get access key age from AWS API."""
@@ -274,12 +276,13 @@ class AccessKeyManager:
 
         # Step 6: Record metadata in 1Password
         try:
-            self.op.edit_item(profile_name,
+            item_title = self.passwords.get_item_title(profile_name)
+            self.op.edit_item(item_title,
                               **{
                                   'last_access_key_refresh[text]': datetime.now().isoformat(),
                                   'current_access_key_id[text]': new_key['AccessKeyId']
                               })
-            print(f"✓ Updated 1Password metadata for: {profile_name}")
+            print(f"✓ Updated 1Password metadata for: {profile_name} with item title: {item_title}")
         except subprocess.CalledProcessError:
             print("⚠️ Failed to update 1Password metadata, but access key refresh succeeded")
 

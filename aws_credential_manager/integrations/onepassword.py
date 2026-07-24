@@ -6,13 +6,13 @@ import string
 import subprocess
 from typing import cast
 
-from ..utils.config import DEFAULT_PASSWORD_LENGTH
+from ..utils.config import DEFAULT_PASSWORD_LENGTH, DEFAULT_VAULT
 
 
 class OnePasswordClient:
     """Thin wrapper around 1Password CLI commands."""
 
-    def __init__(self, vault_name: str = "AWS"):
+    def __init__(self, vault_name: str = DEFAULT_VAULT):
         self.vault_name = vault_name
 
     def check_session(self) -> bool:
