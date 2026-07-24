@@ -63,7 +63,7 @@ class ConfigManager:
     def __init__(self, credentials_path: str | None = None, vault_name: str = DEFAULT_VAULT):
         self.credentials_path = credentials_path or os.path.expanduser("~/.aws/credentials")
         self.vault_name = vault_name
-    
+
     def get_mapping_path(self) -> str:
         """Resolve the profile mapping file path (env-overridable)."""
         filename = os.environ.get("PROFILE_MAPPING_FILE", PROFILE_MAPPING_FILE)
