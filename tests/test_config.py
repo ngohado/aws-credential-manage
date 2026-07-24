@@ -103,6 +103,23 @@ class TestGetProfileMapping:
         assert cfg.get_profile_mapping("prof-a") is None
 
 
+class TestVaultDefaultsUnified:
+    def test_onepassword_uses_shared_default(self):
+        from aws_credential_manager.integrations.onepassword import OnePasswordClient
+        from aws_credential_manager.utils.config import DEFAULT_VAULT
+
+        assert OnePasswordClient().vault_name == DEFAULT_VAULT
+
+    def test_credential_manager_uses_shared_default(self):
+        import inspect
+
+        from aws_credential_manager.core.credential_manager import CredentialManager
+        from aws_credential_manager.utils.config import DEFAULT_VAULT
+
+        sig = inspect.signature(CredentialManager.__init__)
+        assert sig.parameters["vault_name"].default == DEFAULT_VAULT
+
+
 class TestConfigManager:
     def test_defaults(self):
         cfg = ConfigManager()

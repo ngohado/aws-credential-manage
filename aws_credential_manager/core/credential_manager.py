@@ -9,6 +9,7 @@ from ..integrations.onepassword import OnePasswordClient
 from ..utils.config import (
     DEFAULT_ACCESS_KEY_MAX_AGE,
     DEFAULT_PASSWORD_MAX_AGE,
+    DEFAULT_VAULT,
     ConfigManager,
 )
 from .access_key_manager import AccessKeyManager
@@ -18,7 +19,7 @@ from .password_manager import PasswordManager
 class CredentialManager:
     """Top-level orchestrator for all credential operations."""
 
-    def __init__(self, credentials_path: str | None = None, vault_name: str = "Employee"):
+    def __init__(self, credentials_path: str | None = None, vault_name: str = DEFAULT_VAULT):
         self.config = ConfigManager(credentials_path, vault_name)
         self.aws = AWSClient()
         self.op = OnePasswordClient(vault_name)

@@ -4,7 +4,11 @@ import argparse
 import sys
 
 from ..core.credential_manager import CredentialManager
-from ..utils.config import DEFAULT_ACCESS_KEY_MAX_AGE, DEFAULT_PASSWORD_MAX_AGE
+from ..utils.config import (
+    DEFAULT_ACCESS_KEY_MAX_AGE,
+    DEFAULT_PASSWORD_MAX_AGE,
+    DEFAULT_VAULT,
+)
 
 
 def main() -> int:
@@ -13,7 +17,9 @@ def main() -> int:
     )
     parser.add_argument('--credentials-path', help='Path to AWS credentials file')
     parser.add_argument(
-        '--vault', default='Employee', help='1Password vault name (default: Employee)'
+        '--vault',
+        default=DEFAULT_VAULT,
+        help=f'1Password vault name (default: {DEFAULT_VAULT})',
     )
     parser.add_argument(
         '--dry-run', action='store_true',
