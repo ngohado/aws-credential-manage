@@ -66,6 +66,43 @@ class TestResolveMappingPath:
         assert _resolve_mapping_path(abs_path, PROJECT_ROOT) == abs_path
 
 
+class TestGetProfileMapping:
+    def _write_mapping(self, tmp_path: Path) -> Path:
+        data = {
+            "profile_mappings": {
+                "prof-a": {"onepassword_title": "AWS Prof A", "description": "x"}
+            }
+        }
+        f = tmp_path / "profile_mapping.json"
+        f.write_text(json.dumps(data))
+        return f
+
+    def test_returns_mapping_for_known_profile(self, tmp_path, monkeypatch):
+        f = self._write_mapping(tmp_path)
+        monkeypatch.setenv("PROFILE_MAPPING_FILE", str(f))
+        cfg = ConfigManager()
+        result = cfg.get_profile_mapping("prof-a")
+        assert result == {"onepassword_title": "AWS Prof A", "description": "x"}
+
+    def test_returns_none_for_unknown_profile(self, tmp_path, monkeypatch):
+        f = self._write_mapping(tmp_path)
+        monkeypatch.setenv("PROFILE_MAPPING_FILE", str(f))
+        cfg = ConfigManager()
+        assert cfg.get_profile_mapping("missing") is None
+
+    def test_returns_none_when_file_missing(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("PROFILE_MAPPING_FILE", str(tmp_path / "nope.json"))
+        cfg = ConfigManager()
+        assert cfg.get_profile_mapping("prof-a") is None
+
+    def test_returns_none_on_invalid_json(self, tmp_path, monkeypatch):
+        f = tmp_path / "profile_mapping.json"
+        f.write_text("{ not valid json")
+        monkeypatch.setenv("PROFILE_MAPPING_FILE", str(f))
+        cfg = ConfigManager()
+        assert cfg.get_profile_mapping("prof-a") is None
+
+
 class TestConfigManager:
     def test_defaults(self):
         cfg = ConfigManager()

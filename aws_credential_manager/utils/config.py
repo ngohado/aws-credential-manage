@@ -64,29 +64,26 @@ class ConfigManager:
         self.credentials_path = credentials_path or os.path.expanduser("~/.aws/credentials")
         self.vault_name = vault_name
     
+    def get_mapping_path(self) -> str:
+        """Resolve the profile mapping file path (env-overridable)."""
+        filename = os.environ.get("PROFILE_MAPPING_FILE", PROFILE_MAPPING_FILE)
+        return _resolve_mapping_path(filename, PROJECT_ROOT)
+
     def get_profile_mapping(self, profile_name: str) -> dict | None:
-        # get from the file profile_mapping.json - this file is in the root folder of the project
-        # it is here: /home/victor/code/github.com/nguyenquangkhai/aws-credential-manage/profile_mapping.json        
-        mapping_file_path = '/home/victor/code/github.com/nguyenquangkhai/aws-credential-manage/profile_mapping.json'
-        mapping_folder_path = os.path.dirname(mapping_file_path)
-        # print(f"Debug - Looking for profile mapping in: {mapping_file_path} in folder: {mapping_folder_path}")
-        if not os.path.exists(mapping_folder_path):
-            print(f"⚠ Profile mapping file not found: {mapping_folder_path}")
+        """Return the 1Password mapping entry for a profile, or None."""
+        mapping_path = self.get_mapping_path()
+        if not os.path.exists(mapping_path):
+            print(f"⚠ Profile mapping file not found: {mapping_path}")
             return None
-        
-        with open(mapping_file_path, 'r', encoding='utf-8') as f:
-            try:
-                mapping_data = json.load(f)                
-                # print(f"Debug - Loaded profile mapping data: {mapping_data}")
-                profile_mappings = mapping_data.get("profile_mappings", {})
-                return profile_mappings.get(profile_name)
-            except json.JSONDecodeError as e:
-                print(f"⚠ Error parsing profile mapping file: {e}")
-                return None
-        
+        try:
+            with open(mapping_path, encoding="utf-8") as f:
+                mapping_data = json.load(f)
+        except json.JSONDecodeError as e:
+            print(f"⚠ Error parsing profile mapping file: {e}")
+            return None
         profile_mappings = mapping_data.get("profile_mappings", {})
         return profile_mappings.get(profile_name)
-        
+
 
     def get_aws_profiles(self) -> list[dict]:
         """Parse AWS credentials file and extract profile names."""
