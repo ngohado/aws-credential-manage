@@ -1,11 +1,15 @@
 {
-  "profile_mappings": {    
-    "deca-ai-widgets-dev": {
-      "onepassword_title": "AWS DECA AI Widgets Dev",
+  "profile_mappings": {
+    "your-aws-profile-name": {
+      "onepassword_title": "Your 1Password Item Title",
+      "description": "Description of this AWS environment"
+    },
+    "company-service-dev": {
+      "onepassword_title": "AWS Company Service Dev",
       "description": "Development environment for Company Service"
     },
-    "deca-ai-widgets-prod": {
-      "onepassword_title": "Deca AI Widgets Prod",
+    "company-service-prod": {
+      "onepassword_title": "AWS Company Service Prod",
       "description": "Production environment for Company Service"
     },
     "resola-deca-crm-dev": {
