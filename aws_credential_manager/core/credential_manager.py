@@ -74,7 +74,6 @@ class CredentialManager:
 
             try:
                 item_title = self.get_item_title(pname)
-                # print(f"Debug - Importing credentials for '{pname}' into 1Password item '{item_title}'")
                 item_data = self.op.get_item(item_title)
                 if not item_data:
                     print(f"✗ 1Password item not found: {item_title}")

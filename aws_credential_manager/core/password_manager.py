@@ -18,9 +18,7 @@ class PasswordManager:
     def get_item_title(self, profile_name: str) -> str:
         """Get the 1Password item title for a given AWS profile name."""
         mapping = self.config.get_profile_mapping(profile_name)
-        # print(f"Debug - Mapping for profile '{profile_name}': {mapping}")
         if mapping and 'onepassword_title' in mapping:
-            # print(f"Debug - Found 1Password title for profile '{profile_name}': {mapping['onepassword_title']}")
             return mapping['onepassword_title']
         return profile_name  # Fallback to profile name if no mapping exists
 
@@ -107,9 +105,7 @@ class PasswordManager:
             return False
 
         # Update 1Password
-        
         item_data = self.op.get_item(item_title)
-        # print(f"Debug - Retrieved 1Password item data for '{item_title}': {item_data}")
         if not item_data:
             print(f"✗ 1Password item not found: {item_title}")
             return False

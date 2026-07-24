@@ -276,9 +276,7 @@ class AccessKeyManager:
 
         # Step 6: Record metadata in 1Password
         try:
-            # print(f"Start debug - Recording access key refresh metadata in 1Password for profile '{profile_name}'")
             item_title = self.passwords.get_item_title(profile_name)
-            # print(f"Debug - Retrieved 1Password item title for profile '{profile_name}': {item_title}")
             self.op.edit_item(item_title,
                               **{
                                   'last_access_key_refresh[text]': datetime.now().isoformat(),
