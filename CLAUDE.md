@@ -138,6 +138,13 @@ python3 aws_credential_updater.py --dry-run quarterly-update
 - Override with `--vault` flag
 - All 1Password items must exist in the specified vault
 
+### Environment Configuration (`.env`)
+Copy `.env.example` to `.env` to configure per-machine settings. Precedence:
+real environment variable > `.env` file > built-in default.
+- `DEFAULT_VAULT` — 1Password vault name (built-in default: `AWS`)
+- `PROFILE_MAPPING_FILE` — profile mapping file; relative paths resolve
+  against the project root (built-in default: `profile_mapping.json`)
+
 ## Security Considerations
 
 - Passwords meet AWS policy: 18+ characters, mixed case, numbers, symbols

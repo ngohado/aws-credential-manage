@@ -38,7 +38,15 @@ A comprehensive tool for automating AWS IAM credential management, integrating w
 ### Installation
 1. Clone this repository
 2. Configure your profile mappings in `profile_mapping.json`
-3. Set up automation: `./setup_quarterly_automation.sh`
+3. (Optional) Copy `.env.example` to `.env` to configure per-machine settings
+4. Set up automation: `./setup_quarterly_automation.sh`
+
+### Environment Configuration (`.env`)
+Copy `.env.example` to `.env` to configure per-machine settings. Precedence:
+real environment variable > `.env` file > built-in default.
+- `DEFAULT_VAULT` — 1Password vault name (built-in default: `AWS`)
+- `PROFILE_MAPPING_FILE` — profile mapping file; relative paths resolve
+  against the project root (built-in default: `profile_mapping.json`)
 
 ### Basic Usage
 ```bash
