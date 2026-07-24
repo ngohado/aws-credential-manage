@@ -1,17 +1,57 @@
 """Configuration management for AWS credential manager."""
 
 import configparser
-
-import os
-
 import json
+import os
+from pathlib import Path
+
+# Project root = repository root (two levels up from this file:
+# aws_credential_manager/utils/config.py -> repo root).
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _load_dotenv(path: str, environ: dict | None = None) -> None:
+    """Load KEY=VALUE lines from a .env file into environ (default os.environ).
+
+    Only sets a key when it is not already present, so real environment
+    variables always take precedence. Best-effort: malformed lines and a
+    missing file are ignored silently.
+    """
+    env = os.environ if environ is None else environ
+    if not os.path.exists(path):
+        return
+    with open(path, encoding="utf-8") as f:
+        for raw in f:
+            line = raw.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, value = line.partition("=")
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key and key not in env:
+                env[key] = value
+
+
+def _resolve_mapping_path(filename: str, project_root: Path) -> str:
+    """Resolve a mapping filename: absolute as-is, relative under project_root."""
+    p = Path(filename)
+    if p.is_absolute():
+        return str(p)
+    return str(project_root / p)
+
+
+# Load .env at import so env vars are available before constants resolve.
+_load_dotenv(str(PROJECT_ROOT / ".env"))
 
 # Default expiry thresholds (days)
 DEFAULT_PASSWORD_MAX_AGE = 90
 DEFAULT_ACCESS_KEY_MAX_AGE = 90
 
-# Default vault name
-DEFAULT_VAULT = "Employee"
+# Default vault name (env-overridable; built-in default matches docs).
+DEFAULT_VAULT = os.environ.get("DEFAULT_VAULT", "AWS")
+
+# Profile mapping filename (env-overridable).
+PROFILE_MAPPING_FILE = os.environ.get("PROFILE_MAPPING_FILE", "profile_mapping.json")
 
 # Password generation settings
 DEFAULT_PASSWORD_LENGTH = 18
