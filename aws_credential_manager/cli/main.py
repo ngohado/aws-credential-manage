@@ -13,7 +13,7 @@ def main() -> int:
     )
     parser.add_argument('--credentials-path', help='Path to AWS credentials file')
     parser.add_argument(
-        '--vault', default='AWS', help='1Password vault name (default: AWS)'
+        '--vault', default='Employee', help='1Password vault name (default: Employee)'
     )
     parser.add_argument(
         '--dry-run', action='store_true',

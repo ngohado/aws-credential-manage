@@ -14,6 +14,15 @@ class PasswordManager:
         self.aws = aws
         self.op = op
         self.config = config
+    
+    def get_item_title(self, profile_name: str) -> str:
+        """Get the 1Password item title for a given AWS profile name."""
+        mapping = self.config.get_profile_mapping(profile_name)
+        # print(f"Debug - Mapping for profile '{profile_name}': {mapping}")
+        if mapping and 'onepassword_title' in mapping:
+            # print(f"Debug - Found 1Password title for profile '{profile_name}': {mapping['onepassword_title']}")
+            return mapping['onepassword_title']
+        return profile_name  # Fallback to profile name if no mapping exists
 
     def get_password_age(self, profile_name: str) -> dict | None:
         """Get password age, preferring AWS IAM credential report over 1Password."""
@@ -33,7 +42,8 @@ class PasswordManager:
             print(f"⚠ Could not fetch AWS password age for {profile_name}: {e}")
 
         # --- Fallback: 1Password metadata ---
-        item_data = self.op.get_item(profile_name)
+        item_title = self.get_item_title(profile_name)
+        item_data = self.op.get_item(item_title)
         if not item_data:
             return None
 
@@ -55,15 +65,17 @@ class PasswordManager:
                     'source': '1Password (fallback)',
                 }
         except (ValueError, TypeError) as e:
-            print(f"✗ Failed to get 1Password timestamp for {profile_name}: {e}")
+            print(f"✗ Failed to get 1Password timestamp for {profile_name} that have item title {item_title}: {e}")
 
         return None
 
     def update_profile(self, profile_name: str, dry_run: bool = False) -> bool:
+
+        item_title = self.get_item_title(profile_name)
         """Update AWS console password and store in 1Password."""
         if dry_run:
             print(f"[DRY RUN] Would update AWS console password for '{profile_name}':")
-            print(f"  1Password Item: {profile_name}")
+            print(f"  1Password Item: {item_title}")
             print("  Actions:")
             print("    1. Generate secure password (18+ chars, meets AWS policy)")
             print("    2. Update AWS console password via IAM API")
@@ -95,18 +107,20 @@ class PasswordManager:
             return False
 
         # Update 1Password
-        item_data = self.op.get_item(profile_name)
+        
+        item_data = self.op.get_item(item_title)
+        # print(f"Debug - Retrieved 1Password item data for '{item_title}': {item_data}")
         if not item_data:
-            print(f"✗ 1Password item not found: {profile_name}")
+            print(f"✗ 1Password item not found: {item_title}")
             return False
 
         try:
-            self.op.edit_item(profile_name,
+            self.op.edit_item(item_title,
                               password=new_password,
                               **{'last_password_update[text]': datetime.now().isoformat()})
-            print(f"✓ Updated 1Password password for: {profile_name}")
+            print(f"✓ Updated 1Password password for: {item_title}")
         except Exception as e:
-            print(f"✗ Failed to update 1Password for {profile_name}: {e}")
+            print(f"✗ Failed to update 1Password for {item_title}: {e}")
             return False
 
         print(f"✓ Successfully updated both AWS and 1Password for: {profile_name}")

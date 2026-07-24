@@ -18,7 +18,7 @@ from .password_manager import PasswordManager
 class CredentialManager:
     """Top-level orchestrator for all credential operations."""
 
-    def __init__(self, credentials_path: str | None = None, vault_name: str = "AWS"):
+    def __init__(self, credentials_path: str | None = None, vault_name: str = "Employee"):
         self.config = ConfigManager(credentials_path, vault_name)
         self.aws = AWSClient()
         self.op = OnePasswordClient(vault_name)
@@ -40,7 +40,7 @@ class CredentialManager:
             print(f"     1Password: {profile_name}")
             print()
 
-    def import_credentials(self, profile_name: str | None = None, dry_run: bool = False) -> bool:
+    def import_credentials(self, profile_name: str | None = None, dry_run: bool = False) -> bool:        
         """Import AWS access keys from credentials file to 1Password items."""
         profiles = self.config.get_aws_profiles()
 
@@ -56,7 +56,7 @@ class CredentialManager:
             print("✗ No profiles to import")
             return False
 
-        print(f"Importing AWS credentials for {len(target_profiles)} profiles to 1Password...")
+        print(f"Importing AWS credentials for {len(target_profiles)} profiles to 1Password...")        
 
         success_count = 0
         for profile in target_profiles:
@@ -72,9 +72,11 @@ class CredentialManager:
                 continue
 
             try:
-                item_data = self.op.get_item(pname)
+                item_title = self.get_item_title(pname)
+                # print(f"Debug - Importing credentials for '{pname}' into 1Password item '{item_title}'")
+                item_data = self.op.get_item(item_title)
                 if not item_data:
-                    print(f"✗ 1Password item not found: {pname}")
+                    print(f"✗ 1Password item not found: {item_title}")
                     continue
 
                 has_access_key = (
@@ -85,7 +87,7 @@ class CredentialManager:
                     is not None
                 )
 
-                self.op.edit_item(pname,
+                self.op.edit_item(item_title,
                                   **{
                                       'aws_access_key_id[text]':
                                           profile['access_key_id'],
@@ -96,11 +98,11 @@ class CredentialManager:
                                   })
 
                 action = "Updated" if (has_access_key or has_secret_key) else "Added"
-                print(f"✓ {action} AWS credentials in 1Password: {pname}")
+                print(f"✓ {action} AWS credentials in 1Password: {pname} - item title: {item_title}")
                 success_count += 1
 
             except Exception as e:
-                print(f"✗ Failed to import credentials for {pname}: {e}")
+                print(f"✗ Failed to import credentials for {pname} (item title: {item_title}): {e}")
 
         print(
             f"\n📊 Summary: {success_count}/{len(target_profiles)} profiles "

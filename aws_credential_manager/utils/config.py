@@ -1,14 +1,17 @@
 """Configuration management for AWS credential manager."""
 
 import configparser
+
 import os
+
+import json
 
 # Default expiry thresholds (days)
 DEFAULT_PASSWORD_MAX_AGE = 90
 DEFAULT_ACCESS_KEY_MAX_AGE = 90
 
 # Default vault name
-DEFAULT_VAULT = "AWS"
+DEFAULT_VAULT = "Employee"
 
 # Password generation settings
 DEFAULT_PASSWORD_LENGTH = 18
@@ -20,6 +23,30 @@ class ConfigManager:
     def __init__(self, credentials_path: str | None = None, vault_name: str = DEFAULT_VAULT):
         self.credentials_path = credentials_path or os.path.expanduser("~/.aws/credentials")
         self.vault_name = vault_name
+    
+    def get_profile_mapping(self, profile_name: str) -> dict | None:
+        # get from the file profile_mapping.json - this file is in the root folder of the project
+        # it is here: /home/victor/code/github.com/nguyenquangkhai/aws-credential-manage/profile_mapping.json        
+        mapping_file_path = '/home/victor/code/github.com/nguyenquangkhai/aws-credential-manage/profile_mapping.json'
+        mapping_folder_path = os.path.dirname(mapping_file_path)
+        # print(f"Debug - Looking for profile mapping in: {mapping_file_path} in folder: {mapping_folder_path}")
+        if not os.path.exists(mapping_folder_path):
+            print(f"⚠ Profile mapping file not found: {mapping_folder_path}")
+            return None
+        
+        with open(mapping_file_path, 'r', encoding='utf-8') as f:
+            try:
+                mapping_data = json.load(f)                
+                # print(f"Debug - Loaded profile mapping data: {mapping_data}")
+                profile_mappings = mapping_data.get("profile_mappings", {})
+                return profile_mappings.get(profile_name)
+            except json.JSONDecodeError as e:
+                print(f"⚠ Error parsing profile mapping file: {e}")
+                return None
+        
+        profile_mappings = mapping_data.get("profile_mappings", {})
+        return profile_mappings.get(profile_name)
+        
 
     def get_aws_profiles(self) -> list[dict]:
         """Parse AWS credentials file and extract profile names."""
