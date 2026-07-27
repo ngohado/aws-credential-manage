@@ -63,6 +63,25 @@ python3 aws_credential_updater.py refresh-access-key <profile_name>
 python3 aws_credential_updater.py quarterly-update
 ```
 
+### Batch Credential Maintenance
+
+The shortcut processes every configured AWS profile by default. Use repeated
+`--exclude` options to skip profiles, and use `--dry-run` to preview changes.
+
+```bash
+# Rotate passwords for every configured profile
+./batch_credentials.sh password
+
+# Refresh access keys while skipping selected profiles
+./batch_credentials.sh access-key --exclude profile-a --exclude profile-b
+
+# Run both operations without making changes
+./batch_credentials.sh both --dry-run
+```
+
+Processing continues after a profile failure, and the command exits non-zero
+if any selected operation fails.
+
 ## Documentation
 
 See [CLAUDE.md](CLAUDE.md) for comprehensive usage documentation, including:
