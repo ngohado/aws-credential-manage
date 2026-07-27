@@ -110,6 +110,81 @@ class CredentialManager:
         )
         return success_count == len(target_profiles)
 
+    def batch_update(
+        self,
+        operation: str,
+        excluded_profiles: list[str] | None = None,
+        dry_run: bool = False,
+    ) -> bool:
+        """Run password and/or access-key maintenance for selected profiles."""
+        valid_operations = {"password", "access-key", "both"}
+        if operation not in valid_operations:
+            print(
+                f"✗ Invalid batch operation '{operation}'. "
+                "Choose password, access-key, or both."
+            )
+            return False
+
+        profiles = self.config.get_aws_profiles()
+        profile_names = [profile["name"] for profile in profiles]
+        excluded = list(dict.fromkeys(excluded_profiles or []))
+        unknown_exclusions = [name for name in excluded if name not in profile_names]
+        if unknown_exclusions:
+            print(
+                "✗ Unknown profile exclusion(s): "
+                + ", ".join(unknown_exclusions)
+            )
+            return False
+
+        excluded_set = set(excluded)
+        selected_names = [name for name in profile_names if name not in excluded_set]
+        if not selected_names:
+            print("✗ No profiles remain after applying exclusions")
+            return False
+
+        operations = [operation] if operation != "both" else ["password", "access-key"]
+        total_operations = len(selected_names) * len(operations)
+        successful_operations = 0
+        failed_profiles: list[str] = []
+
+        print(
+            f"🔄 Running batch '{operation}' for {len(selected_names)} profile(s)"
+        )
+        if excluded:
+            print(f"Excluded profiles: {', '.join(excluded)}")
+        if dry_run:
+            print("[DRY RUN] No changes will be made")
+
+        for profile_name in selected_names:
+            profile_succeeded = True
+            print(f"\n📍 Processing {profile_name}")
+            for current_operation in operations:
+                try:
+                    if current_operation == "password":
+                        succeeded = self.passwords.update_profile(profile_name, dry_run)
+                    else:
+                        succeeded = self.access_keys.refresh_key(profile_name, dry_run)
+                except Exception as error:
+                    print(f"✗ {current_operation} failed for {profile_name}: {error}")
+                    succeeded = False
+
+                if succeeded:
+                    successful_operations += 1
+                else:
+                    profile_succeeded = False
+                    if current_operation == "password" and operation == "both":
+                        break
+
+            if not profile_succeeded:
+                failed_profiles.append(profile_name)
+
+        print("\n📊 Batch summary")
+        print(f"  Successful operations: {successful_operations}/{total_operations}")
+        print(f"  Profiles failed: {len(failed_profiles)}/{len(selected_names)}")
+        if failed_profiles:
+            print(f"  Failed profiles: {', '.join(failed_profiles)}")
+        return not failed_profiles
+
     def quarterly_update(self, password_max_age: int | None = None,
                           access_key_max_age: int | None = None,
                           dry_run: bool = False) -> bool:
