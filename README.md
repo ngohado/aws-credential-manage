@@ -79,8 +79,23 @@ The shortcut processes every configured AWS profile by default. Use repeated
 ./batch_credentials.sh both --dry-run
 ```
 
-Processing continues after a profile failure, and the command exits non-zero
-if any selected operation fails.
+The equivalent direct Python commands are:
+
+```bash
+python3 aws_credential_updater.py batch-update password
+python3 aws_credential_updater.py batch-update access-key --exclude profile-a
+python3 aws_credential_updater.py --dry-run batch-update both
+```
+
+`password` rotates IAM console passwords and synchronizes them with 1Password.
+`access-key` replaces AWS access keys and updates the local credentials file.
+`both` runs the password rotation before the access-key refresh for each
+profile. All configured profiles are selected by default, and `--exclude` may
+be repeated.
+
+Processing continues after a profile failure, prints a final summary, and
+exits non-zero if any selected operation fails. Use an active 1Password CLI
+session and valid AWS CLI profiles before running a non-dry-run command.
 
 ## Documentation
 
