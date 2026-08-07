@@ -65,8 +65,11 @@ python3 aws_credential_updater.py quarterly-update
 
 ### Batch Credential Maintenance
 
-The shortcut processes every configured AWS profile by default. Use repeated
-`--exclude` options to skip profiles, and use `--dry-run` to preview changes.
+The shortcut processes every configured AWS profile that has a 1Password
+mapping. Profiles without one — including the `default` section, which is
+usually an alias of another profile — are skipped and reported, so the same IAM
+user is never rotated twice in a single run. Use repeated `--exclude` options to
+skip further profiles, and use `--dry-run` to preview changes.
 
 ```bash
 # Rotate passwords for every configured profile

@@ -130,12 +130,21 @@ python3 aws_credential_updater.py batch-update both
 python3 aws_credential_updater.py --dry-run batch-update password --exclude profile-a
 ```
 
-The batch command selects all valid profiles from the configured AWS
-credentials file by default. The `--exclude` option may be repeated. The
-`both` operation runs password rotation before access-key refresh for each
-profile. Processing continues after individual failures, prints an aggregate
-summary, and exits non-zero if any selected operation fails. Passwords and
-secret access keys are never printed.
+The batch command selects profiles from the configured AWS credentials file
+that also have an entry in the profile mapping file. Profiles with no 1Password
+mapping — such as the `default` section, which is normally an alias of another
+profile — are skipped and listed in the output. This is a safety guard: an alias
+shares an IAM user with its real profile, so operating on both would rotate the
+same user twice and strand the credentials the alias still points at. The batch
+aborts outright if the mapping file is missing or unparseable.
+
+The `--exclude` option may be repeated and is validated against the credentials
+file, so excluding an auto-skipped profile is still accepted. The `both`
+operation runs password rotation before access-key refresh for each profile, and
+skips the access-key step for a profile whose password step failed. Processing
+continues after individual failures, prints an aggregate summary, and exits
+non-zero if any selected operation fails. Passwords and secret access keys are
+never printed.
 
 ## Dependencies and Prerequisites
 

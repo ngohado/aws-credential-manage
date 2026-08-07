@@ -137,9 +137,24 @@ class CredentialManager:
             return False
 
         excluded_set = set(excluded)
-        selected_names = [name for name in profile_names if name not in excluded_set]
-        if not selected_names:
+        candidate_names = [name for name in profile_names if name not in excluded_set]
+        if not candidate_names:
             print("✗ No profiles remain after applying exclusions")
+            return False
+
+        # Profiles with no 1Password item are skipped rather than attempted.
+        # An unmapped profile is typically an alias of a mapped one (e.g. the
+        # 'default' section), so operating on it would rotate the same IAM user
+        # twice and strand credentials the alias still points at.
+        mappings = self.config.load_profile_mappings()
+        if mappings is None:
+            print("✗ Cannot read the profile mapping file; refusing to run a batch")
+            return False
+
+        selected_names = [name for name in candidate_names if name in mappings]
+        unmapped_names = [name for name in candidate_names if name not in mappings]
+        if not selected_names:
+            print("✗ No selected profile has a 1Password mapping")
             return False
 
         operations = [operation] if operation != "both" else ["password", "access-key"]
@@ -152,6 +167,10 @@ class CredentialManager:
         )
         if excluded:
             print(f"Excluded profiles: {', '.join(excluded)}")
+        if unmapped_names:
+            print(
+                f"Skipped (no 1Password mapping): {', '.join(unmapped_names)}"
+            )
         if dry_run:
             print("[DRY RUN] No changes will be made")
 
