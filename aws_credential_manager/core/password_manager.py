@@ -93,6 +93,14 @@ class PasswordManager:
             print(f"  Note: Fix AWS credentials for {profile_name} to enable password updates")
             return False
 
+        # Confirm the 1Password item exists before rotating anything. A password
+        # changed in AWS but not stored here would be unrecoverable.
+        item_data = self.op.get_item(item_title)
+        if not item_data:
+            print(f"✗ 1Password item not found: {item_title}")
+            print(f"  Skipping {profile_name}: AWS password left unchanged")
+            return False
+
         new_password = self.op.generate_password()
 
         # Update AWS console password
@@ -105,11 +113,6 @@ class PasswordManager:
             return False
 
         # Update 1Password
-        item_data = self.op.get_item(item_title)
-        if not item_data:
-            print(f"✗ 1Password item not found: {item_title}")
-            return False
-
         try:
             self.op.edit_item(item_title,
                               password=new_password,
