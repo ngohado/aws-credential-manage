@@ -1,6 +1,9 @@
-"""Tests for password rotation ordering guarantees."""
+"""Tests for password rotation ordering and secret-handling guarantees."""
+
+import subprocess
 
 from aws_credential_manager.core.password_manager import PasswordManager
+from aws_credential_manager.integrations.onepassword import OnePasswordError
 
 
 class FakeAWS:
@@ -69,3 +72,61 @@ def test_dry_run_changes_nothing():
     assert manager.update_profile("mapped-profile", dry_run=True) is True
     assert aws.login_profile_updates == []
     assert op.edits == []
+
+
+def test_onepassword_failure_is_not_reported_as_missing_item(capsys):
+    """A dropped session must not claim the item does not exist."""
+    manager, aws, _ = make_manager(item={"id": "abc"})
+
+    def raise_session_error(item_title):
+        raise OnePasswordError(
+            f"1Password lookup failed for '{item_title}': "
+            "You are not currently signed in"
+        )
+
+    manager.op.get_item = raise_session_error
+
+    assert manager.update_profile("mapped-profile") is False
+    assert aws.login_profile_updates == []
+    out = capsys.readouterr().out
+    assert "not currently signed in" in out
+    assert "item not found" not in out
+    assert "AWS password left unchanged" in out
+
+
+def test_failed_aws_call_does_not_print_the_password(capsys):
+    """subprocess errors carry their own argv, which holds the password."""
+    manager, aws, op = make_manager(item={"id": "abc"})
+    secret = "-xl%x6};^wRi;@)C4J"
+    op.generate_password = lambda: secret
+
+    def explode(profile_name, username, password):
+        raise subprocess.CalledProcessError(
+            252,
+            ["aws", "iam", "update-login-profile", f"--password={password}"],
+            stderr="aws: [ERROR]: argument --password: expected one argument",
+        )
+
+    aws.update_login_profile = explode
+
+    assert manager.update_profile("mapped-profile") is False
+    out = capsys.readouterr().out
+    assert secret not in out
+    assert "252" in out
+    assert "expected one argument" in out
+
+
+def test_failed_onepassword_write_does_not_print_the_password(capsys):
+    manager, aws, op = make_manager(item={"id": "abc"})
+    secret = "Str0ng!Password--x"
+    op.generate_password = lambda: secret
+
+    def explode(item_title, **fields):
+        raise subprocess.CalledProcessError(
+            1, ["op", "item", "edit", item_title, f"password={secret}"], stderr=""
+        )
+
+    op.edit_item = explode
+
+    assert manager.update_profile("mapped-profile") is False
+    assert secret not in capsys.readouterr().out

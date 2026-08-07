@@ -1,10 +1,35 @@
 """Password management for AWS console passwords."""
 
+import subprocess
 from datetime import datetime
 
 from ..integrations.aws_client import AWSClient
-from ..integrations.onepassword import OnePasswordClient
+from ..integrations.onepassword import OnePasswordClient, OnePasswordError
 from ..utils.config import DEFAULT_PASSWORD_MAX_AGE, ConfigManager
+
+
+def _describe_failure(error: Exception, secret: str | None = None) -> str:
+    """Describe a failure without echoing the command that produced it.
+
+    A failed subprocess carries its own argv, which for password rotation
+    contains the plaintext password. Printing the exception directly would
+    leak it into terminals and log files, so only the exit status and the
+    tool's own stderr are reported, with the secret scrubbed from both.
+    """
+    if isinstance(error, subprocess.CalledProcessError):
+        detail = error.stderr
+        if isinstance(detail, bytes):
+            detail = detail.decode("utf-8", "replace")
+        detail = (detail or "").strip()
+        message = f"exit status {error.returncode}"
+        if detail:
+            message = f"{message}: {detail}"
+    else:
+        message = str(error)
+
+    if secret:
+        message = message.replace(secret, "***")
+    return message
 
 
 class PasswordManager:
@@ -41,7 +66,12 @@ class PasswordManager:
 
         # --- Fallback: 1Password metadata ---
         item_title = self.get_item_title(profile_name)
-        item_data = self.op.get_item(item_title)
+        try:
+            item_data = self.op.get_item(item_title)
+        except OnePasswordError as e:
+            # Age lookup is best-effort; a failed read must not abort a listing.
+            print(f"⚠ {e}")
+            return None
         if not item_data:
             return None
 
@@ -95,7 +125,13 @@ class PasswordManager:
 
         # Confirm the 1Password item exists before rotating anything. A password
         # changed in AWS but not stored here would be unrecoverable.
-        item_data = self.op.get_item(item_title)
+        try:
+            item_data = self.op.get_item(item_title)
+        except OnePasswordError as e:
+            print(f"✗ {e}")
+            print(f"  Skipping {profile_name}: AWS password left unchanged")
+            return False
+
         if not item_data:
             print(f"✗ 1Password item not found: {item_title}")
             print(f"  Skipping {profile_name}: AWS password left unchanged")
@@ -109,7 +145,8 @@ class PasswordManager:
             self.aws.update_login_profile(profile_name, user['UserName'], new_password)
             print(f"✓ Updated AWS console password for user: {user['UserName']}")
         except Exception as e:
-            print(f"✗ Failed to update AWS console password: {e}")
+            print(f"✗ Failed to update AWS console password: "
+                  f"{_describe_failure(e, new_password)}")
             return False
 
         # Update 1Password
@@ -119,7 +156,8 @@ class PasswordManager:
                               **{'last_password_update[text]': datetime.now().isoformat()})
             print(f"✓ Updated 1Password password for: {item_title}")
         except Exception as e:
-            print(f"✗ Failed to update 1Password for {item_title}: {e}")
+            print(f"✗ Failed to update 1Password for {item_title}: "
+                  f"{_describe_failure(e, new_password)}")
             return False
 
         print(f"✓ Successfully updated both AWS and 1Password for: {profile_name}")
