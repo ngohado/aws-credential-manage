@@ -3,14 +3,14 @@
 from datetime import datetime
 
 from ..integrations.aws_client import AWSClient
-from ..integrations.onepassword import OnePasswordClient
+from ..integrations.vault_protocol import PasswordVault
 from ..utils.config import DEFAULT_PASSWORD_MAX_AGE, ConfigManager
 
 
 class PasswordManager:
     """Manages AWS console password rotation with 1Password sync."""
 
-    def __init__(self, aws: AWSClient, op: OnePasswordClient, config: ConfigManager):
+    def __init__(self, aws: AWSClient, op: PasswordVault, config: ConfigManager):
         self.aws = aws
         self.op = op
         self.config = config
