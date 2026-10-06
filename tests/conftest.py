@@ -1,5 +1,6 @@
 """Shared pytest fixtures."""
 
+import json
 import textwrap
 from pathlib import Path
 
@@ -27,6 +28,19 @@ def aws_credentials_file(tmp_path: Path) -> Path:
     path = tmp_path / "credentials"
     path.write_text(content)
     return path
+
+
+@pytest.fixture
+def bitwarden_item() -> dict:
+    """A minimal Bitwarden item fixture."""
+    return {
+        "id": "item-123",
+        "name": "test-item",
+        "fields": [
+            {"name": "username", "value": "bob", "type": 1},
+            {"name": "password", "value": "hunter2", "type": 2},
+        ],
+    }
 
 
 class FakeCompletedProcess:

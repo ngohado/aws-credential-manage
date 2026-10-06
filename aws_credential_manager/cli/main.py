@@ -3,23 +3,30 @@
 import argparse
 import sys
 
-from ..core.credential_manager import CredentialManager
+from ..core.credential_manager import VAULT_CLIENTS, CredentialManager
 from ..utils.config import (
     DEFAULT_ACCESS_KEY_MAX_AGE,
     DEFAULT_PASSWORD_MAX_AGE,
     DEFAULT_VAULT,
+    DEFAULT_VAULT_TYPE,
 )
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description='AWS Credential Password Updater with 1Password'
+        description='AWS Credential Password Updater with password vault'
     )
     parser.add_argument('--credentials-path', help='Path to AWS credentials file')
     parser.add_argument(
         '--vault',
         default=DEFAULT_VAULT,
-        help=f'1Password vault name (default: {DEFAULT_VAULT})',
+        help=f'Vault name (default: {DEFAULT_VAULT})',
+    )
+    parser.add_argument(
+        '--vault-type',
+        default=DEFAULT_VAULT_TYPE,
+        choices=sorted(VAULT_CLIENTS),
+        help=f'Vault backend (default: {DEFAULT_VAULT_TYPE})',
     )
     parser.add_argument(
         '--dry-run', action='store_true',
@@ -122,7 +129,7 @@ def main() -> int:
         parser.print_help()
         return 1
 
-    mgr = CredentialManager(args.credentials_path, args.vault)
+    mgr = CredentialManager(args.credentials_path, args.vault, args.vault_type)
 
     try:
         if args.command == 'list':
