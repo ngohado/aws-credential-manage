@@ -50,6 +50,9 @@ DEFAULT_ACCESS_KEY_MAX_AGE = 90
 # Default vault name (env-overridable; built-in default matches docs).
 DEFAULT_VAULT = os.environ.get("DEFAULT_VAULT", "AWS")
 
+# Default vault type (1password or bitwarden; env-overridable).
+DEFAULT_VAULT_TYPE = os.environ.get("DEFAULT_VAULT_TYPE", "1password")
+
 # Profile mapping filename (env-overridable).
 PROFILE_MAPPING_FILE = os.environ.get("PROFILE_MAPPING_FILE", "profile_mapping.json")
 

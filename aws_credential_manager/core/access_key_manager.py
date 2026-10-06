@@ -7,7 +7,7 @@ import time
 from datetime import datetime
 
 from ..integrations.aws_client import AWSClient
-from ..integrations.onepassword import OnePasswordClient
+from ..integrations.vault_protocol import PasswordVault
 from ..utils.config import DEFAULT_ACCESS_KEY_MAX_AGE, ConfigManager
 from .password_manager import PasswordManager
 
@@ -15,7 +15,7 @@ from .password_manager import PasswordManager
 class AccessKeyManager:
     """Manages AWS access key rotation with rollback support."""
 
-    def __init__(self, aws: AWSClient, op: OnePasswordClient, config: ConfigManager):
+    def __init__(self, aws: AWSClient, op: PasswordVault, config: ConfigManager):
         self.aws = aws
         self.op = op
         self.config = config

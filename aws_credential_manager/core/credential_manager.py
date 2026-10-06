@@ -3,26 +3,45 @@
 import json
 import os
 from datetime import datetime
+from typing import cast
 
 from ..integrations.aws_client import AWSClient
+from ..integrations.bitwarden import BitwardenClient
 from ..integrations.onepassword import OnePasswordClient
+from ..integrations.vault_protocol import PasswordVault
 from ..utils.config import (
     DEFAULT_ACCESS_KEY_MAX_AGE,
     DEFAULT_PASSWORD_MAX_AGE,
     DEFAULT_VAULT,
+    DEFAULT_VAULT_TYPE,
     ConfigManager,
 )
 from .access_key_manager import AccessKeyManager
 from .password_manager import PasswordManager
 
 
+VAULT_CLIENTS: dict[str, type] = {
+    "1password": OnePasswordClient,
+    "bitwarden": BitwardenClient,
+}
+
+
 class CredentialManager:
     """Top-level orchestrator for all credential operations."""
 
-    def __init__(self, credentials_path: str | None = None, vault_name: str = DEFAULT_VAULT):
+    def __init__(self, credentials_path: str | None = None,
+                 vault_name: str = DEFAULT_VAULT,
+                 vault_type: str = DEFAULT_VAULT_TYPE):
         self.config = ConfigManager(credentials_path, vault_name)
+
+        client_cls = VAULT_CLIENTS.get(vault_type)
+        if client_cls is None:
+            raise ValueError(
+                f"Unknown vault type: {vault_type!r}. "
+                f"Supported: {', '.join(sorted(VAULT_CLIENTS))}"
+            )
+        self.op: PasswordVault = cast(PasswordVault, client_cls(vault_name))
         self.aws = AWSClient()
-        self.op = OnePasswordClient(vault_name)
         self.passwords = PasswordManager(self.aws, self.op, self.config)
         self.access_keys = AccessKeyManager(self.aws, self.op, self.config)
 
@@ -38,7 +57,7 @@ class CredentialManager:
             profile_name = profile['name']
             print(f"{i:2d}. {profile_name}")
             print(f"     Access Key: {profile['access_key_id']}")
-            print(f"     1Password: {profile_name}")
+            print(f"     Vault Item: {profile_name}")
             print()
 
     def import_credentials(self, profile_name: str | None = None, dry_run: bool = False) -> bool:        
@@ -57,7 +76,7 @@ class CredentialManager:
             print("✗ No profiles to import")
             return False
 
-        print(f"Importing AWS credentials for {len(target_profiles)} profiles to 1Password...")        
+        print(f"Importing AWS credentials for {len(target_profiles)} profiles to vault...")        
 
         success_count = 0
         for profile in target_profiles:
@@ -65,7 +84,7 @@ class CredentialManager:
 
             if dry_run:
                 print(f"[DRY RUN] Would import credentials for '{pname}':")
-                print(f"  1Password Item: {pname}")
+                print(f"  Vault Item: {pname}")
                 print(f"  AWS Access Key ID: {profile['access_key_id']}")
                 print(f"  AWS Secret Key: {profile['secret_access_key'][:8]}...")
                 print()
@@ -73,7 +92,7 @@ class CredentialManager:
                 continue
 
             try:
-                item_title = self.get_item_title(pname)
+                item_title = self.passwords.get_item_title(pname)
                 item_data = self.op.get_item(item_title)
                 if not item_data:
                     print(f"✗ 1Password item not found: {item_title}")
@@ -98,7 +117,7 @@ class CredentialManager:
                                   })
 
                 action = "Updated" if (has_access_key or has_secret_key) else "Added"
-                print(f"✓ {action} AWS credentials in 1Password: {pname} - item title: {item_title}")
+                print(f"✓ {action} AWS credentials in vault: {pname} - item title: {item_title}")
                 success_count += 1
 
             except Exception as e:
