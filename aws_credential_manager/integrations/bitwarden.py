@@ -97,8 +97,13 @@ class BitwardenClient:
         # so callers that use 1Password notation work with Bitwarden too.
         _suffix_re = re.compile(r"\[(text|password|concealed)\]$")
 
+        login = item.get("login")
         for key, value in fields.items():
             clean_key = _suffix_re.sub("", key)
+            # Login items keep the password under login.password, not a field.
+            if clean_key == "password" and isinstance(login, dict):
+                login["password"] = value
+                continue
             # Bitwarden field types: 0 = text, 1 = hidden, 2 = boolean
             field_type = 1 if clean_key in ("password", "aws_secret_access_key") else 0
             if clean_key in existing:
@@ -127,10 +132,18 @@ class BitwardenClient:
         )
 
     def get_field_value(self, item_data: dict, label: str) -> str | None:
-        """Extract a field value from Bitwarden item data by name."""
+        """Extract a field value from Bitwarden item data by name.
+
+        A Login item keeps its password under ``login.password`` rather than
+        a custom field, so ``password`` falls back there when no field matches.
+        """
         for field in item_data.get("fields", []):
             if field.get("name") == label:
                 return cast("str | None", field.get("value"))
+        if label == "password":
+            login = item_data.get("login")
+            if isinstance(login, dict):
+                return cast("str | None", login.get("password"))
         return None
 
     def generate_password(self, length: int = DEFAULT_PASSWORD_LENGTH) -> str:

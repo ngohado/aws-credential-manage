@@ -81,6 +81,20 @@ class TestEditItem:
         encode_input = run.call_args_list[1].args[0]
         assert encode_input == ["bw", "encode"]
 
+    def test_updates_login_password(self, client, mocker):
+        mocker.patch.dict("os.environ", {"BW_SESSION": "tok-123"})
+        item = {"id": "item-123", "name": "test-item", "login": {"password": "old"}, "fields": []}
+        run = mocker.patch(BW_RUN)
+        run.side_effect = [
+            FakeCompletedProcess(stdout=json.dumps(item)),
+            FakeCompletedProcess(stdout="<encoded>"),
+            FakeCompletedProcess(),
+        ]
+        client.edit_item("test-item", password="newpass")
+        encoded = json.loads(run.call_args_list[1].kwargs["input"])
+        assert encoded["login"]["password"] == "newpass"
+        assert all(f["name"] != "password" for f in encoded["fields"])
+
     def test_no_session_raises(self, client, mocker):
         mocker.patch.dict("os.environ", {}, clear=True)
         with pytest.raises(RuntimeError, match="BW_SESSION"):
@@ -123,6 +137,17 @@ class TestGetFieldValue:
 
     def test_no_fields(self, client):
         assert client.get_field_value({}, "username") is None
+
+    def test_login_password_fallback(self, client):
+        login_item = {"login": {"username": "bob", "password": "hunter2"}, "fields": []}
+        assert client.get_field_value(login_item, "password") == "hunter2"
+
+    def test_custom_field_wins_over_login(self, client):
+        item = {
+            "login": {"password": "old"},
+            "fields": [{"name": "password", "value": "custom"}],
+        }
+        assert client.get_field_value(item, "password") == "custom"
 
 
 class TestGeneratePassword:
