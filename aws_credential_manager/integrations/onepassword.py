@@ -70,6 +70,21 @@ class OnePasswordClient:
             f"1Password lookup failed for '{title}': {stderr or 'no error output'}"
         )
 
+    def get_one_time_password(self, title: str) -> str:
+        """Return the item's current primary one-time password without revealing its seed."""
+        result = subprocess.run([
+            'op', 'item', 'get', title,
+            '--vault', self.vault_name,
+            '--otp',
+        ], capture_output=True, text=True)
+        if result.returncode == 0:
+            return result.stdout.strip()
+
+        stderr = (result.stderr or "").strip()
+        raise OnePasswordError(
+            f"1Password OTP lookup failed for '{title}': {stderr or 'no error output'}"
+        )
+
     def edit_item(self, title: str, **fields: str) -> None:
         """Update fields on a 1Password item.
 

@@ -174,7 +174,10 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == 'refresh-access-key':
             if not mgr.check_op_session():
                 return 1
-            mgr.access_keys.refresh_key(args.profile_name, args.dry_run)
+            mgr.access_keys.refresh_key(
+                args.profile_name,
+                args.dry_run,
+            )
         elif args.command == 'refresh-all-access-keys':
             if not mgr.check_op_session():
                 return 1

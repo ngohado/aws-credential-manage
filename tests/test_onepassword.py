@@ -107,6 +107,26 @@ class TestGetItem:
         with pytest.raises(OnePasswordError):
             client.get_item("some-item")
 
+
+class TestGetOneTimePassword:
+    def test_returns_primary_otp_without_revealing_the_seed(self, client, mocker):
+        run = mocker.patch(MODULE).run
+        run.return_value = FakeCompletedProcess(returncode=0, stdout="123456\n")
+
+        assert client.get_one_time_password("my-item") == "123456"
+        args = run.call_args.args[0]
+        assert args[:4] == ["op", "item", "get", "my-item"]
+        assert "--otp" in args
+        assert "--reveal" not in args
+
+    def test_raises_when_the_item_has_no_otp_or_op_fails(self, client, mocker):
+        mocker.patch(MODULE).run.return_value = FakeCompletedProcess(
+            returncode=1, stderr="item has no one-time password"
+        )
+
+        with pytest.raises(OnePasswordError, match="OTP lookup failed"):
+            client.get_one_time_password("my-item")
+
     def test_empty_stderr_raises_rather_than_assuming_not_found(self, client, mocker):
         mocker.patch(MODULE).run.return_value = FakeCompletedProcess(returncode=1)
         with pytest.raises(OnePasswordError):
