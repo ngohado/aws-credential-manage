@@ -1,6 +1,5 @@
 """Shared pytest fixtures."""
 
-import json
 import textwrap
 from pathlib import Path
 

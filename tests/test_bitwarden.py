@@ -87,6 +87,33 @@ class TestEditItem:
             client.edit_item("x", password="p")
 
 
+class TestGetOneTimePassword:
+    def test_returns_totp_code(self, client, mocker):
+        mocker.patch.dict("os.environ", {"BW_SESSION": "tok-123"})
+        run = mocker.patch(BW_RUN)
+        run.side_effect = [
+            FakeCompletedProcess(stdout=json.dumps({"id": "abc", "name": "it"})),
+            FakeCompletedProcess(stdout="123456"),
+        ]
+        assert client.get_one_time_password("it") == "123456"
+        assert run.call_args_list[1].args[0] == ["bw", "get", "totp", "abc"]
+
+    def test_missing_item_raises(self, client, mocker):
+        mocker.patch.dict("os.environ", {}, clear=True)
+        with pytest.raises(ValueError, match="not found"):
+            client.get_one_time_password("missing")
+
+    def test_cli_failure_raises(self, client, mocker):
+        mocker.patch.dict("os.environ", {"BW_SESSION": "tok-123"})
+        run = mocker.patch(BW_RUN)
+        run.side_effect = [
+            FakeCompletedProcess(stdout=json.dumps({"id": "abc", "name": "it"})),
+            subprocess.CalledProcessError(1, ["bw", "get", "totp", "abc"]),
+        ]
+        with pytest.raises(RuntimeError, match="TOTP lookup failed"):
+            client.get_one_time_password("it")
+
+
 class TestGetFieldValue:
     def test_found(self, client, bitwarden_item):
         assert client.get_field_value(bitwarden_item, "username") == "bob"

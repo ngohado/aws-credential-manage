@@ -60,6 +60,22 @@ class BitwardenClient:
         except subprocess.CalledProcessError:
             return None
 
+    def get_one_time_password(self, title: str) -> str:
+        """Return the item's current TOTP code."""
+        item = self.get_item(title)
+        if not item:
+            raise ValueError(f"Item '{title}' not found in Bitwarden vault")
+        try:
+            result = self._run("get", "totp", item["id"])
+        except subprocess.CalledProcessError as error:
+            raise RuntimeError(
+                f"Bitwarden TOTP lookup failed for '{title}'"
+            ) from error
+        code = str(result.stdout).strip()
+        if not code:
+            raise RuntimeError(f"Bitwarden returned an empty TOTP for '{title}'")
+        return code
+
     def edit_item(self, title: str, **fields: str) -> None:
         """Update fields on a Bitwarden item.
 

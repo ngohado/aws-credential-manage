@@ -17,6 +17,10 @@ class PasswordVault(Protocol):
         """Get a vault item by title. Returns parsed dict or None if not found."""
         ...
 
+    def get_one_time_password(self, title: str) -> str:
+        """Return the item's current one-time password (MFA code)."""
+        ...
+
     def edit_item(self, title: str, **fields: str) -> None:
         """Update fields on a vault item.
 
