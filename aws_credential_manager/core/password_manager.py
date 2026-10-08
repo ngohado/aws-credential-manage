@@ -40,12 +40,13 @@ class PasswordManager:
         self.aws = aws
         self.op = op
         self.config = config
-    
+
     def get_item_title(self, profile_name: str) -> str:
         """Get the 1Password item title for a given AWS profile name."""
         mapping = self.config.get_profile_mapping(profile_name)
-        if mapping and 'onepassword_title' in mapping:
-            return mapping['onepassword_title']
+        item_title = mapping.get('onepassword_title') if mapping else None
+        if isinstance(item_title, str):
+            return item_title
         return profile_name  # Fallback to profile name if no mapping exists
 
     def get_password_age(self, profile_name: str) -> dict | None:
@@ -94,7 +95,10 @@ class PasswordManager:
                     'source': '1Password (fallback)',
                 }
         except (ValueError, TypeError) as e:
-            print(f"✗ Failed to get 1Password timestamp for {profile_name} that have item title {item_title}: {e}")
+            print(
+                f"✗ Failed to get 1Password timestamp for {profile_name} "
+                f"that have item title {item_title}: {e}"
+            )
 
         return None
 

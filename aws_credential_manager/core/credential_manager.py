@@ -41,7 +41,9 @@ class CredentialManager:
             print(f"     1Password: {profile_name}")
             print()
 
-    def import_credentials(self, profile_name: str | None = None, dry_run: bool = False) -> bool:        
+    def import_credentials(
+        self, profile_name: str | None = None, dry_run: bool = False
+    ) -> bool:
         """Import AWS access keys from credentials file to 1Password items."""
         profiles = self.config.get_aws_profiles()
 
@@ -57,7 +59,7 @@ class CredentialManager:
             print("✗ No profiles to import")
             return False
 
-        print(f"Importing AWS credentials for {len(target_profiles)} profiles to 1Password...")        
+        print(f"Importing AWS credentials for {len(target_profiles)} profiles to 1Password...")
 
         success_count = 0
         for profile in target_profiles:
@@ -73,7 +75,7 @@ class CredentialManager:
                 continue
 
             try:
-                item_title = self.get_item_title(pname)
+                item_title = self.passwords.get_item_title(pname)
                 item_data = self.op.get_item(item_title)
                 if not item_data:
                     print(f"✗ 1Password item not found: {item_title}")
@@ -98,7 +100,10 @@ class CredentialManager:
                                   })
 
                 action = "Updated" if (has_access_key or has_secret_key) else "Added"
-                print(f"✓ {action} AWS credentials in 1Password: {pname} - item title: {item_title}")
+                print(
+                    f"✓ {action} AWS credentials in 1Password: {pname} - "
+                    f"item title: {item_title}"
+                )
                 success_count += 1
 
             except Exception as e:
