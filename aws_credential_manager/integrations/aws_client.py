@@ -20,20 +20,18 @@ class AWSClient:
         ], capture_output=True, text=True, check=True)
         return cast(dict, json.loads(result.stdout)['User'])
 
-    def update_login_profile(self, profile_name: str, username: str, password: str) -> None:
-        """Update AWS console password.
+    def change_password(self, profile_name: str, old_password: str, new_password: str) -> None:
+        """Change the calling IAM user's console password.
 
-        The password is attached with '--password=' rather than passed as a
-        separate argument. A generated password may begin with '-', which the
-        AWS CLI argument parser would otherwise read as another option and
-        reject with exit status 252 before contacting AWS.
+        Passwords are attached with '=' rather than passed as separate
+        arguments. Either password may begin with '-', which the AWS CLI
+        argument parser would otherwise read as another option and reject.
         """
         subprocess.run([
-            'aws', 'iam', 'update-login-profile',
+            'aws', 'iam', 'change-password',
             '--profile', profile_name,
-            '--user-name', username,
-            f'--password={password}',
-            '--no-password-reset-required'
+            f'--old-password={old_password}',
+            f'--new-password={new_password}',
         ], check=True, capture_output=True)
 
     def list_access_keys(self, profile_name: str, username: str) -> list[dict]:

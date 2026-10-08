@@ -8,7 +8,7 @@ from ..integrations.onepassword import OnePasswordClient, OnePasswordError
 from ..utils.config import DEFAULT_PASSWORD_MAX_AGE, ConfigManager
 
 
-def _describe_failure(error: Exception, secret: str | None = None) -> str:
+def _describe_failure(error: Exception, *secrets: str | None) -> str:
     """Describe a failure without echoing the command that produced it.
 
     A failed subprocess carries its own argv, which for password rotation
@@ -27,8 +27,9 @@ def _describe_failure(error: Exception, secret: str | None = None) -> str:
     else:
         message = str(error)
 
-    if secret:
-        message = message.replace(secret, "***")
+    for secret in secrets:
+        if secret:
+            message = message.replace(secret, "***")
     return message
 
 
@@ -137,16 +138,22 @@ class PasswordManager:
             print(f"  Skipping {profile_name}: AWS password left unchanged")
             return False
 
+        old_password = self.op.get_field_value(item_data, 'password')
+        if not old_password:
+            print(f"✗ 1Password password field is missing: {item_title}")
+            print(f"  Skipping {profile_name}: AWS password left unchanged")
+            return False
+
         new_password = self.op.generate_password()
 
-        # Update AWS console password
+        # ChangePassword deliberately cannot modify another IAM user's password.
         try:
             user = self.aws.get_user(profile_name)
-            self.aws.update_login_profile(profile_name, user['UserName'], new_password)
+            self.aws.change_password(profile_name, old_password, new_password)
             print(f"✓ Updated AWS console password for user: {user['UserName']}")
         except Exception as e:
             print(f"✗ Failed to update AWS console password: "
-                  f"{_describe_failure(e, new_password)}")
+                  f"{_describe_failure(e, old_password, new_password)}")
             return False
 
         # Update 1Password
@@ -157,7 +164,7 @@ class PasswordManager:
             print(f"✓ Updated 1Password password for: {item_title}")
         except Exception as e:
             print(f"✗ Failed to update 1Password for {item_title}: "
-                  f"{_describe_failure(e, new_password)}")
+                  f"{_describe_failure(e, old_password, new_password)}")
             return False
 
         print(f"✓ Successfully updated both AWS and 1Password for: {profile_name}")

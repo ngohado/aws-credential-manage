@@ -8,13 +8,13 @@ from aws_credential_manager.integrations.onepassword import OnePasswordError
 
 class FakeAWS:
     def __init__(self):
-        self.login_profile_updates = []
+        self.password_changes = []
 
     def get_user(self, profile_name):
         return {"UserName": f"user-{profile_name}"}
 
-    def update_login_profile(self, profile_name, username, password):
-        self.login_profile_updates.append((profile_name, username))
+    def change_password(self, profile_name, old_password, new_password):
+        self.password_changes.append((profile_name, old_password, new_password))
 
 
 class FakeOnePassword:
@@ -27,6 +27,11 @@ class FakeOnePassword:
 
     def generate_password(self):
         return "generated-password"
+
+    def get_field_value(self, item_data, label):
+        if label == "password":
+            return item_data.get("password")
+        return None
 
     def edit_item(self, item_title, **fields):
         self.edits.append(item_title)
@@ -48,7 +53,7 @@ def test_missing_onepassword_item_leaves_aws_password_untouched():
     manager, aws, op = make_manager(item=None)
 
     assert manager.update_profile("unmapped-profile") is False
-    assert aws.login_profile_updates == []
+    assert aws.password_changes == []
     assert op.edits == []
 
 
@@ -59,10 +64,14 @@ def test_missing_onepassword_item_is_reported():
 
 
 def test_existing_item_rotates_and_stores_password():
-    manager, aws, op = make_manager(item={"id": "abc"})
+    manager, aws, op = make_manager(
+        item={"id": "abc", "password": "current-password"}
+    )
 
     assert manager.update_profile("mapped-profile") is True
-    assert aws.login_profile_updates == [("mapped-profile", "user-mapped-profile")]
+    assert aws.password_changes == [
+        ("mapped-profile", "current-password", "generated-password")
+    ]
     assert op.edits == ["mapped-profile"]
 
 
@@ -70,7 +79,7 @@ def test_dry_run_changes_nothing():
     manager, aws, op = make_manager(item={"id": "abc"})
 
     assert manager.update_profile("mapped-profile", dry_run=True) is True
-    assert aws.login_profile_updates == []
+    assert aws.password_changes == []
     assert op.edits == []
 
 
@@ -87,7 +96,7 @@ def test_onepassword_failure_is_not_reported_as_missing_item(capsys):
     manager.op.get_item = raise_session_error
 
     assert manager.update_profile("mapped-profile") is False
-    assert aws.login_profile_updates == []
+    assert aws.password_changes == []
     out = capsys.readouterr().out
     assert "not currently signed in" in out
     assert "item not found" not in out
@@ -96,28 +105,43 @@ def test_onepassword_failure_is_not_reported_as_missing_item(capsys):
 
 def test_failed_aws_call_does_not_print_the_password(capsys):
     """subprocess errors carry their own argv, which holds the password."""
-    manager, aws, op = make_manager(item={"id": "abc"})
-    secret = "-xl%x6};^wRi;@)C4J"
-    op.generate_password = lambda: secret
+    old_secret = "current-password"
+    new_secret = "-xl%x6};^wRi;@)C4J"
+    manager, aws, op = make_manager(item={"id": "abc", "password": old_secret})
+    op.generate_password = lambda: new_secret
 
-    def explode(profile_name, username, password):
+    def explode(profile_name, old_password, new_password):
         raise subprocess.CalledProcessError(
             252,
-            ["aws", "iam", "update-login-profile", f"--password={password}"],
+            [
+                "aws", "iam", "change-password",
+                f"--old-password={old_password}",
+                f"--new-password={new_password}",
+            ],
             stderr="aws: [ERROR]: argument --password: expected one argument",
         )
 
-    aws.update_login_profile = explode
+    aws.change_password = explode
 
     assert manager.update_profile("mapped-profile") is False
     out = capsys.readouterr().out
-    assert secret not in out
+    assert old_secret not in out
+    assert new_secret not in out
     assert "252" in out
     assert "expected one argument" in out
 
 
-def test_failed_onepassword_write_does_not_print_the_password(capsys):
+def test_missing_stored_password_leaves_aws_password_untouched(capsys):
     manager, aws, op = make_manager(item={"id": "abc"})
+
+    assert manager.update_profile("mapped-profile") is False
+    assert aws.password_changes == []
+    assert op.edits == []
+    assert "password field is missing" in capsys.readouterr().out
+
+
+def test_failed_onepassword_write_does_not_print_the_password(capsys):
+    manager, aws, op = make_manager(item={"id": "abc", "password": "current-password"})
     secret = "Str0ng!Password--x"
     op.generate_password = lambda: secret
 

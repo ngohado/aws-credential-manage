@@ -28,27 +28,29 @@ class TestGetUser:
         assert "--profile" in args and "dev" in args
 
 
-class TestUpdateLoginProfile:
+class TestChangePassword:
     def test_builds_command(self, client, mocker):
         run = mocker.patch(MODULE).run
         run.return_value = FakeCompletedProcess()
-        client.update_login_profile("dev", "bob", "pw123")
+        client.change_password("dev", "old-pw", "new-pw")
         args = run.call_args.args[0]
-        assert args[:3] == ["aws", "iam", "update-login-profile"]
-        assert "--user-name" in args and "bob" in args
-        assert "--password=pw123" in args
-        assert "--no-password-reset-required" in args
+        assert args[:3] == ["aws", "iam", "change-password"]
+        assert "--old-password=old-pw" in args
+        assert "--new-password=new-pw" in args
+        assert "--user-name" not in args
 
-    def test_password_starting_with_hyphen_is_not_parsed_as_an_option(
+    def test_passwords_starting_with_hyphens_are_not_parsed_as_options(
         self, client, mocker
     ):
-        """A bare '--password', '-pw' pair makes the AWS CLI exit 252."""
+        """Bare password values beginning with '-' make the AWS CLI reject them."""
         run = mocker.patch(MODULE).run
         run.return_value = FakeCompletedProcess()
-        client.update_login_profile("dev", "bob", "-xl%x6};^wRi")
+        client.change_password("dev", "-old-pw", "-new-pw")
         args = run.call_args.args[0]
-        assert "--password=-xl%x6};^wRi" in args
-        assert "-xl%x6};^wRi" not in args
+        assert "--old-password=-old-pw" in args
+        assert "--new-password=-new-pw" in args
+        assert "-old-pw" not in args
+        assert "-new-pw" not in args
 
 
 class TestListAccessKeys:
