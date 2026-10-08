@@ -9,6 +9,9 @@ from ..utils.config import DEFAULT_PASSWORD_LENGTH
 class PasswordVault(Protocol):
     """Interface that every password vault client must implement."""
 
+    #: Human-readable vault name for user-facing messages (e.g. "1Password").
+    display_name: str
+
     def check_session(self) -> bool:
         """Check if the vault CLI session is active. Return True if ready."""
         ...

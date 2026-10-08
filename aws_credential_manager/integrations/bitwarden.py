@@ -17,6 +17,8 @@ class BitwardenClient:
     Requires BW_SESSION environment variable to be set after 'bw unlock'.
     """
 
+    display_name = "Bitwarden"
+
     def __init__(self, vault_name: str = "AWS"):
         self.vault_name = vault_name
 

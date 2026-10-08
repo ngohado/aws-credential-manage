@@ -45,7 +45,7 @@ class CredentialManager:
         self.access_keys = AccessKeyManager(self.aws, self.op, self.config)
 
     def check_op_session(self) -> bool:
-        """Check if 1Password CLI session is active."""
+        """Check if the vault CLI session is active."""
         return self.op.check_session()
 
     def list_profiles(self) -> None:
@@ -62,7 +62,7 @@ class CredentialManager:
     def import_credentials(
         self, profile_name: str | None = None, dry_run: bool = False
     ) -> bool:
-        """Import AWS access keys from credentials file to 1Password items."""
+        """Import AWS access keys from credentials file to vault items."""
         profiles = self.config.get_aws_profiles()
 
         if profile_name:
@@ -96,7 +96,7 @@ class CredentialManager:
                 item_title = self.passwords.get_item_title(pname)
                 item_data = self.op.get_item(item_title)
                 if not item_data:
-                    print(f"✗ 1Password item not found: {item_title}")
+                    print(f"✗ {self.op.display_name} item not found: {item_title}")
                     continue
 
                 has_access_key = (
@@ -165,7 +165,7 @@ class CredentialManager:
             print("✗ No profiles remain after applying exclusions")
             return False
 
-        # Profiles with no 1Password item are skipped rather than attempted.
+        # Profiles with no vault mapping are skipped rather than attempted.
         # An unmapped profile is typically an alias of a mapped one (e.g. the
         # 'default' section), so operating on it would rotate the same IAM user
         # twice and strand credentials the alias still points at.
@@ -177,7 +177,7 @@ class CredentialManager:
         selected_names = [name for name in candidate_names if name in mappings]
         unmapped_names = [name for name in candidate_names if name not in mappings]
         if not selected_names:
-            print("✗ No selected profile has a 1Password mapping")
+            print("✗ No selected profile has a vault mapping")
             return False
 
         operations = [operation] if operation != "both" else ["password", "access-key"]
@@ -192,7 +192,7 @@ class CredentialManager:
             print(f"Excluded profiles: {', '.join(excluded)}")
         if unmapped_names:
             print(
-                f"Skipped (no 1Password mapping): {', '.join(unmapped_names)}"
+                f"Skipped (no vault mapping): {', '.join(unmapped_names)}"
             )
         if dry_run:
             print("[DRY RUN] No changes will be made")

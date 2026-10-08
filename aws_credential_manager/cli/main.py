@@ -65,7 +65,7 @@ def main(argv: list[str] | None = None) -> int:
 
     # Import credentials
     import_parser = subparsers.add_parser(
-        'import-credentials', help='Import AWS credentials to 1Password'
+        'import-credentials', help='Import AWS credentials to the vault'
     )
     import_parser.add_argument(
         'profile_name', nargs='?',
@@ -74,7 +74,7 @@ def main(argv: list[str] | None = None) -> int:
 
     # Import all credentials
     subparsers.add_parser(
-        'import-all-credentials', help='Import all AWS credentials to 1Password'
+        'import-all-credentials', help='Import all AWS credentials to the vault'
     )
 
     # Refresh access key for single profile
