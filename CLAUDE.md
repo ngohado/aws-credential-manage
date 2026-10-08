@@ -157,7 +157,7 @@ never printed.
 - 1Password CLI session must be active
 - AWS credentials must be valid for each profile being updated
 - IAM permissions required: 
-  - For password updates: `iam:GetUser`, `iam:UpdateLoginProfile`
+  - For password updates: `iam:GetUser`, `iam:ChangePassword`
   - For access key refresh: `iam:CreateAccessKey`, `iam:DeleteAccessKey`, `iam:ListAccessKeys`
   - For access key age tracking: `iam:GetUser`, `iam:ListAccessKeys`
 
